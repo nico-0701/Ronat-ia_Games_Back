@@ -1,0 +1,12 @@
+title = "Ronat-ia Games"
+
+# Mantém todas as regras padrão do gitleaks.
+[extend]
+useDefault = true
+
+# Única exceção: os valores PÚBLICOS e propositalmente fracos de desenvolvimento (Auth:PhonePepper e Jwt:SigningKey em
+# appsettings.Development.json / DevelopmentSecrets.cs). Todos são o base64 de um texto que começa com "dev-only-";
+# a API se recusa a subir com eles fora de Development. Qualquer outro segredo continua sendo barrado.
+[allowlist]
+description = "Segredos públicos de desenvolvimento (base64 de 'dev-only-...')"
+regexes = ['''ZGV2LW9ubHkt[A-Za-z0-9+/=]{20,}''']
