@@ -1,7 +1,11 @@
+using System.Security.Cryptography;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Time.Testing;
 using RonatIa.Games.Infrastructure.Persistence;
 
 namespace RonatIa.Games.Api.Tests.Infrastructure;
@@ -11,12 +15,19 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
 {
     private readonly TestDatabase _database = TestDatabase.Create();
 
+    /// <summary>Segredos de teste (aleatórios por instância, mas estáveis entre os hosts derivados, que compartilham o mesmo banco).</summary>
+    public string PhonePepper { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(48));
+
+    public string JwtSigningKey { get; } = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Testing");
 
         // UseSetting vale desde o início da configuração (ConfigureAppConfiguration chegaria tarde para leituras do Program).
         builder.UseSetting("ConnectionStrings:Default", _database.ConnectionString);
+        builder.UseSetting("Auth:PhonePepper", PhonePepper);
+        builder.UseSetting("Jwt:SigningKey", JwtSigningKey);
         builder.UseSetting("RateLimiting:Enabled", "false");
         builder.UseSetting("Docs:Enabled", "true");
         builder.UseSetting("Cors:AllowedOrigins:0", "https://app.exemplo.test");
@@ -25,6 +36,24 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.ConfigureServices(services =>
             services.AddControllers().AddApplicationPart(typeof(TestErrorsController).Assembly));
     }
+
+    /// <summary>Host derivado (mesmo banco e mesmos segredos) com relógio controlável, para testes de expiração.</summary>
+    public WebApplicationFactory<Program> WithFakeTime(FakeTimeProvider time) =>
+        WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
+        {
+            services.RemoveAll<TimeProvider>();
+            services.AddSingleton<TimeProvider>(time);
+        }));
+
+    /// <summary>Host derivado com configurações extras (ex.: modo de cadastro, limites).</summary>
+    public WebApplicationFactory<Program> WithSettings(params (string Key, string Value)[] settings) =>
+        WithWebHostBuilder(builder =>
+        {
+            foreach (var (key, value) in settings)
+            {
+                builder.UseSetting(key, value);
+            }
+        });
 
     /// <summary>Executa uma ação com um <see cref="AppDbContext"/> novo (escopo próprio), útil para preparar e conferir dados.</summary>
     public async Task WithDbAsync(Func<AppDbContext, Task> action)

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using RonatIa.Games.Domain.Errors;
 
@@ -6,6 +7,7 @@ namespace RonatIa.Games.Api.Tests.Infrastructure;
 
 /// <summary>Endpoints que só existem nos testes, para exercitar o tratamento de erros.</summary>
 [ApiController]
+[AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("test/errors")]
 public sealed class TestErrorsController : ControllerBase

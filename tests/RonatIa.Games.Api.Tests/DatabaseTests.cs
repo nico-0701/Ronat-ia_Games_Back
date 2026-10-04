@@ -1,7 +1,5 @@
 using System.Net;
 using System.Security.Cryptography;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using RonatIa.Games.Api.Tests.Infrastructure;
@@ -121,12 +119,8 @@ public sealed class DatabaseTests(ApiFactory factory) : IClassFixture<ApiFactory
     [Fact]
     public async Task Ready_endpoint_is_unhealthy_when_the_database_is_unreachable()
     {
-        await using var broken = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
-        {
-            builder.UseEnvironment("Testing");
-            builder.UseSetting("ConnectionStrings:Default", "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=2;Command Timeout=2");
-            builder.UseSetting("RateLimiting:Enabled", "false");
-        });
+        var broken = factory.WithSettings(
+            ("ConnectionStrings:Default", "Host=127.0.0.1;Port=1;Database=x;Username=x;Password=x;Timeout=2;Command Timeout=2"));
 
         var ready = await broken.CreateClient().GetAsync("/health/ready");
         var live = await broken.CreateClient().GetAsync("/health/live");

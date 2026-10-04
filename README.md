@@ -31,8 +31,8 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | [`docs/adr`](docs/adr) | Registros de decisões de arquitetura (ADRs) |
 | `docs/ARCHITECTURE.md` | Visão geral da arquitetura *(em breve)* |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de dados, conexão, ambiente local e migrações |
-| `docs/API.md` | Convenções e contrato da API *(em breve)* |
-| `docs/SECURITY.md` | Modelo de ameaças e riscos aceitos *(em breve)* |
+| [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, endpoints e códigos de erro |
+| [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
 | `docs/GAME_DEVELOPMENT.md` | Como criar um novo jogo *(em breve)* |
 | `docs/DEPLOY.md` | Render, Supabase, variáveis e limites dos planos gratuitos *(em breve)* |
 
@@ -64,7 +64,18 @@ Com a API no ar, em desenvolvimento:
 | `http://localhost:5080/openapi/v1.json` | Contrato OpenAPI (também versionado em `docs/openapi/v1.json`) |
 | `http://localhost:5080/health/live` | Processo respondendo |
 | `http://localhost:5080/health/ready` | Processo e banco respondendo |
-| `http://localhost:5080/api/v1/meta` | Versão da API, versão mínima do cliente e hora do servidor |
+| `http://localhost:5080/api/v1/meta` | Versão da API, versão mínima do cliente, hora do servidor e estado de cadastro/captcha |
+
+Teste rápido da entrada (o telefone é o único dado do login; veja [`docs/API.md`](docs/API.md)):
+
+```bash
+curl -s -X POST http://localhost:5080/api/v1/auth/register -H 'Content-Type: application/json' \
+  -d '{"phone":"(11) 98888-7777","displayName":"Nicole","avatarPreset":"preset-2","acceptTerms":true}'
+```
+
+**Segredos de desenvolvimento:** em `Development` a API usa valores **públicos e fracos** (`appsettings.Development.json`) para
+`Auth:PhonePepper` e `Jwt:SigningKey`, só para rodar sem configurar nada; fora de Development ela se recusa a subir com eles.
+Para usar valores próprios (ou um banco remoto), prefira `dotnet user-secrets set "Jwt:SigningKey" "<base64>" --project src/RonatIa.Games.Api`.
 
 **Contrato OpenAPI:** o arquivo `docs/openapi/v1.json` é verificado por um teste. Se a API mudar, atualize-o com
 `UPDATE_OPENAPI=1 dotnet test --filter OpenApiContractTests` (PowerShell: `$env:UPDATE_OPENAPI=1`) e inclua-o no commit.
@@ -79,6 +90,7 @@ src/
   RonatIa.Games.Infrastructure/   EF Core/Npgsql, segurança, imagens
 tests/
   RonatIa.Games.Domain.Tests/     testes unitários das regras de domínio
+  RonatIa.Games.Infrastructure.Tests/  telefone, JWT, refresh token, Turnstile
   RonatIa.Games.Api.Tests/        testes de integração (API em memória + PostgreSQL real)
 scripts/                          banco local (dev-db.ps1)
 docs/                             ADRs, contrato OpenAPI e documentação

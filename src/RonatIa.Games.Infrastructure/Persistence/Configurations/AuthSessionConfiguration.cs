@@ -16,6 +16,10 @@ internal sealed class AuthSessionConfiguration : IEntityTypeConfiguration<AuthSe
         builder.HasKey(session => session.Id);
         builder.Property(session => session.Id).ValueGeneratedNever();
 
+        // Concorrência otimista: duas renovações simultâneas do mesmo refresh token não conseguem as duas gravar;
+        // a segunda recebe DbUpdateConcurrencyException (a entidade incrementa Version a cada mudança de estado).
+        builder.Property(session => session.Version).IsConcurrencyToken();
+
         builder.Property(session => session.TokenHash).IsRequired();
         builder.Property(session => session.DeviceLabel).HasMaxLength(100);
         builder.Property(session => session.RevokedReason).HasMaxLength(30);

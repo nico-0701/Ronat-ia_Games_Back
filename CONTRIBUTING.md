@@ -57,4 +57,4 @@ Mudanças relevantes de arquitetura ou de regras de negócio ganham um **ADR** e
 
 ## Segurança
 
-Vulnerabilidades: não abra issue pública com detalhes exploráveis; avise os mantenedores diretamente. Veja `docs/SECURITY.md` (em breve) para o modelo de ameaças e os riscos aceitos.
+Vulnerabilidades: não abra issue pública com detalhes exploráveis; avise os mantenedores diretamente. Veja [`docs/SECURITY.md`](docs/SECURITY.md) para o modelo de ameaças e os riscos aceitos.

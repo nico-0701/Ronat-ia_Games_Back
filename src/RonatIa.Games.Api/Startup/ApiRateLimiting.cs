@@ -3,12 +3,23 @@ using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.Options;
 
 namespace RonatIa.Games.Api.Startup;
 
+public static class RateLimitPolicies
+{
+    public const string AuthLogin = "auth-login";
+    public const string AuthRegister = "auth-register";
+    public const string AuthRefresh = "auth-refresh";
+}
+
 public static class ApiRateLimiting
 {
-    /// <summary>Teto global por IP; os endpoints sensíveis (login, cadastro, entrar em grupo) ganham políticas próprias.</summary>
+    /// <summary>
+    /// Teto global por IP e políticas próprias para os endpoints sensíveis. Os limites são lidos de forma preguiçosa
+    /// (seção <c>RateLimiting</c>); para desligar tudo (testes), use <c>RateLimiting:Enabled=false</c>.
+    /// </summary>
     public static IServiceCollection AddApiRateLimiting(this IServiceCollection services)
     {
         services.AddRateLimiter(options =>
@@ -24,6 +35,15 @@ public static class ApiRateLimiting
                     QueueLimit = 0,
                     AutoReplenishment = true,
                 }));
+
+            options.AddPolicy(RateLimitPolicies.AuthLogin, context =>
+                PerIp(context, settings => settings.AuthLoginPerMinute, TimeSpan.FromMinutes(1)));
+
+            options.AddPolicy(RateLimitPolicies.AuthRegister, context =>
+                PerIp(context, settings => settings.AuthRegisterPerHour, TimeSpan.FromHours(1)));
+
+            options.AddPolicy(RateLimitPolicies.AuthRefresh, context =>
+                PerIp(context, settings => settings.AuthRefreshPerMinute, TimeSpan.FromMinutes(1)));
         });
 
         return services;
@@ -31,6 +51,18 @@ public static class ApiRateLimiting
 
     /// <summary>IP do cliente (já ajustado pelo middleware de cabeçalhos encaminhados).</summary>
     public static string ClientKey(HttpContext context) => context.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+
+    private static RateLimitPartition<string> PerIp(HttpContext context, Func<RateLimitingSettings, int> limit, TimeSpan window)
+    {
+        var settings = context.RequestServices.GetRequiredService<IOptions<RateLimitingSettings>>().Value;
+        return RateLimitPartition.GetFixedWindowLimiter(ClientKey(context), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = Math.Max(1, limit(settings)),
+            Window = window,
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        });
+    }
 
     private static async ValueTask WriteRejectionAsync(OnRejectedContext context, CancellationToken cancellationToken)
     {

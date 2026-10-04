@@ -1,0 +1,81 @@
+# Segurança
+
+Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos controles implementados. Quando uma decisão muda o que protegemos, ela ganha um ADR.
+
+## O que protegemos
+
+| Ativo | Como |
+|---|---|
+| Número de telefone das pessoas | nunca em claro: só HMAC-SHA256 com segredo do servidor + 4 últimos dígitos; nunca exibido a outros usuários |
+| Sessão (quem é quem) | JWT curto + refresh token rotativo, verificado a cada requisição (ADR-0004) |
+| Dados de grupos e partidas | só membros acessam; a regra é do servidor, não do cliente |
+| Placar e regras dos jogos | calculados no servidor; o cliente envia ações, nunca pontuação |
+| Informação secreta de um jogo (ex.: a carta do mímico) | o servidor devolve a cada jogador só o que ele pode ver |
+| Segredos de infraestrutura | variáveis de ambiente / `dotnet user-secrets`; nunca no Git |
+
+## Riscos aceitos
+
+> Decisão do dono do produto: o site é público, mas o produto é **um app de jogos para amigos**. O telefone é só um registro único. **Sem SMS e sem senha** (ADR-0003).
+
+| Risco | Impacto | Mitigações |
+|---|---|---|
+| **Quem souber o telefone de alguém entra na conta dessa pessoa** (o número não é verificado) | limitado a nome, avatar e grupos da conta; o acesso a um grupo ainda exige a *senha do grupo* | limite de requisições por IP; Turnstile (quando configurado); telefone nunca exposto; sessões listáveis e revogáveis ("sair de todos os aparelhos"); a evolução prevista é acrescentar verificação (WhatsApp/SMS) ou PIN atrás de configuração |
+| **Cadastro do número de outra pessoa** antes dela | a pessoa não consegue criar a própria conta | o administrador pode liberar o número depois de uma verificação humana (fora do sistema) |
+| **Enumeração de contas** (o login responde 404 para número desconhecido, para o app saber que deve mostrar o cadastro) | descobrir quais números têm conta | limite por IP, Turnstile, `Registration:Mode=closed` como válvula de escape |
+| **Veredito autodeclarado nos jogos presenciais** (o servidor não vê a mímica) | pontuação "por honra" | o servidor garante autorização, ordem, tempo e contabilidade; ranking é por diversão |
+
+## Controles implementados
+
+### Identidade e sessões
+- **JWT de acesso (HS256, 30 min):** algoritmo fixo na validação (recusa `alg: none`), emissor e audiência validados, relógio injetado, só leva `sub` (conta), `sid` (sessão) e, para admins, `role`. Sem nome nem telefone.
+- **Refresh token:** 256 bits aleatórios, guardado só como SHA-256, **rotativo** a cada uso, validade deslizante de 90 dias, uma sessão por aparelho (máximo de 10; o menos usado é desconectado).
+- **Detecção de reutilização:** reapresentar um refresh token já trocado revoga a sessão inteira, exceto numa janela de 15 s (nova tentativa legítima de quem perdeu a resposta por rede instável).
+- **Revogação imediata:** a cada requisição autenticada o servidor confere que a sessão não foi revogada e que a conta está ativa (cache de 10 s). Logout, "sair de todos os aparelhos" e suspensão valem na hora, sem esperar o JWT expirar.
+- **A identidade vem do token**, nunca de um telefone, id ou cabeçalho enviado pelo cliente. Todo controller exige login por padrão (`RequireAuthorization()`); o público precisa de `[AllowAnonymous]` explícito.
+- **Concorrência:** `version` na sessão (otimista) impede duas renovações simultâneas de gravarem as duas.
+
+### Segredos e configuração
+- `Auth:PhonePepper` e `Jwt:SigningKey` são validados **na subida**: ausentes, curtos (< 32 bytes) ou iguais aos valores públicos de desenvolvimento fora de Development → a API **não inicia**.
+- `appsettings.json` não traz segredos; segredos reais vêm de variáveis de ambiente (Render) ou `dotnet user-secrets` (desenvolvimento).
+- **`Auth:PhonePepper` é insubstituível:** trocá-lo invalida todos os logins (os telefones só existem como HMAC). Guarde uma cópia em gerenciador de senhas.
+- Rotação da chave do JWT: configurar `Jwt:PreviousSigningKey` com a chave antiga durante a transição.
+
+### Entrada de dados
+- Validação nos DTOs (DataAnnotations) e regras de domínio (nomes: Unicode NFC, espaços colapsados, sem caracteres de controle ou invisíveis).
+- Telefone normalizado para E.164 (libphonenumber); só celulares e fixos válidos.
+- Erros nunca vazam exceções: `ProblemDetails` com `code` estável e `traceId`; 500 genérico para o inesperado.
+
+### Abuso
+- Limite global por IP (600/min) e políticas próprias: login (30/min), cadastro (10/h), renovação (60/min). IP real via `X-Forwarded-For` (o app só é alcançável pelo proxy da hospedagem).
+- **Cloudflare Turnstile** em login e cadastro, ligado quando `Turnstile:SecretKey` está definida; **falha fechada** se o Cloudflare não responder.
+- **Válvula de escape:** `Registration:Mode=closed` bloqueia novos cadastros sem afetar quem já tem conta.
+
+### Navegador e transporte
+- CORS por lista explícita de origens (nunca `*`), com padrões regex para previews. `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, `X-Frame-Options: DENY`, `Cache-Control: no-store` (exceto onde o endpoint define o seu), HSTS fora de Development.
+- Tokens vão em `Authorization: Bearer` (sem cookies, logo sem CSRF). O WebSocket do SignalR aceita o token por `access_token` na query, **só** em `/hubs`.
+
+### Banco de dados
+- Tabelas no schema `app`; `public` vazio. A Data API (PostgREST) do Supabase **não expõe** `app` (verificado), e **RLS está ligado sem políticas** em todas as tabelas (teste automatizado).
+- Acesso só pelo pooler do Supabase; o backend é o único cliente do banco.
+- Evolução planejada: papéis separados (migrador × aplicação) com privilégios mínimos.
+
+### Logs e privacidade
+- Logs estruturados sem telefone, nome, senhas ou tokens; só ids e códigos. Corpo das requisições não é registrado.
+- Exclusão de conta (LGPD): anonimização; o hash do telefone é substituído por um valor aleatório.
+
+### Cadeia de suprimentos
+- Dependabot (NuGet, Actions, Docker), auditoria do NuGet, `gitleaks` no CI, *secret scanning* e *push protection* do GitHub.
+- Evitar pacotes com licença comercial (MediatR, AutoMapper, FluentAssertions 8+). `SixLabors.ImageSharp` (fotos de avatar) tem licença própria: gratuito para projetos de código aberto e pequenos negócios; conferir antes de uso comercial.
+
+## Como reportar uma vulnerabilidade
+
+Não abra uma issue pública com detalhes exploráveis. Avise os mantenedores diretamente (conta GitHub dos donos do repositório) com passos para reproduzir. Se houver vazamento de segredo, **troque o segredo primeiro** e avise em seguida: o histórico do Git é permanente.
+
+## Checklist para PRs que tocam em segurança
+
+- [ ] A identidade vem do token? Nada é lido de telefone/id enviado pelo cliente.
+- [ ] O novo endpoint exige autenticação (padrão) ou tem `[AllowAnonymous]` justificado?
+- [ ] Quem pode ver/alterar? Há teste de autorização (outro usuário, fora do grupo)?
+- [ ] Há informação secreta na resposta? Foi projetada por jogador?
+- [ ] Entrada validada e com limite de tamanho? Há limite de taxa se for sensível?
+- [ ] Nada de dado pessoal em logs, erros ou testes? Nenhum segredo no diff?
