@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Repositório do Front (Web e Android)
+    url: https://github.com/nico-0701/Ronat-ia_Games_Front/issues
+    about: Problemas de interface, PWA ou do aplicativo Android.

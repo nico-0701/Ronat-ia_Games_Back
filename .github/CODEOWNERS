@@ -1,0 +1,5 @@
+# Revisão obrigatória (quando a proteção de branch exigir code owners).
+# Dois mantenedores: qualquer um pode aprovar o trabalho do outro.
+*                 @nico-0701 @Luis-Ambrozin
+/docs/adr/        @nico-0701 @Luis-Ambrozin
+/.github/         @nico-0701 @Luis-Ambrozin

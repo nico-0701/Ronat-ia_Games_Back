@@ -1,0 +1,54 @@
+# ===== .NET =====
+[Bb]in/
+[Oo]bj/
+[Pp]ublish/
+*.user
+*.suo
+*.userprefs
+.vs/
+TestResults/
+coverage/
+*.trx
+*.coverage
+*.nupkg
+*.snupkg
+
+# ===== IDEs =====
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+*.swp
+
+# ===== Segredos e configuração local (NUNCA versionar) =====
+.env
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.*.local.json
+secrets.json
+*.pfx
+*.p12
+*.pem
+*.key
+*.keystore
+*.jks
+service-account*.json
+
+# ===== Ferramentas e dados locais =====
+.tools/
+*.log
+logs/
+node_modules/
+.dotnet/
+
+# ===== Dados pessoais / material legado (NUNCA versionar) =====
+_legado/
+legado/
+*.legacy.zip
+fotos-familia/
+
+# ===== Sistema operacional =====
+.DS_Store
+Thumbs.db
+desktop.ini

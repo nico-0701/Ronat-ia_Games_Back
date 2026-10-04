@@ -1,0 +1,22 @@
+# Normaliza finais de linha: o repositório e a cópia de trabalho usam LF (devs em Windows inclusive).
+* text=auto eol=lf
+
+# O formato clássico de .sln espera CRLF.
+*.sln text eol=crlf
+
+# Arquivos de script do Windows
+*.ps1 text eol=lf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.zip binary
+*.mp3 binary

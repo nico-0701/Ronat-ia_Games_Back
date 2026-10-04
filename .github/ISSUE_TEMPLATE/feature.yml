@@ -1,0 +1,46 @@
+name: Funcionalidade
+description: Propor ou detalhar uma funcionalidade
+labels: ["feature"]
+body:
+  - type: textarea
+    id: contexto
+    attributes:
+      label: Contexto e problema
+      description: Quem precisa disso e por quê?
+    validations:
+      required: true
+  - type: textarea
+    id: proposta
+    attributes:
+      label: Proposta
+      description: O que deve acontecer (comportamento esperado, endpoints, regras).
+    validations:
+      required: true
+  - type: textarea
+    id: criterios
+    attributes:
+      label: Critérios de aceite
+      description: Lista de itens verificáveis.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Área
+      multiple: true
+      options:
+        - backend
+        - frontend
+        - android
+        - database
+        - game
+        - security
+        - documentation
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas e riscos
+      description: Impactos em API, banco, segurança; dependências de outras issues.

@@ -1,0 +1,23 @@
+name: Tarefa
+description: Tarefa técnica, refatoração, documentação ou manutenção
+labels: ["refactor"]
+body:
+  - type: textarea
+    id: objetivo
+    attributes:
+      label: Objetivo
+    validations:
+      required: true
+  - type: textarea
+    id: checklist
+    attributes:
+      label: Checklist
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas

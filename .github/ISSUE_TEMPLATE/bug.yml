@@ -1,0 +1,40 @@
+name: Bug
+description: Algo não funciona como esperado
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Não inclua segredos, tokens, telefones ou dados pessoais reais.**
+        Falhas de segurança exploráveis: avise os mantenedores diretamente, sem abrir issue pública.
+  - type: textarea
+    id: descricao
+    attributes:
+      label: O que aconteceu
+    validations:
+      required: true
+  - type: textarea
+    id: esperado
+    attributes:
+      label: O que era esperado
+    validations:
+      required: true
+  - type: textarea
+    id: reproducao
+    attributes:
+      label: Passos para reproduzir
+      placeholder: |
+        1. ...
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: ambiente
+    attributes:
+      label: Ambiente
+      description: Dev local, Dev compartilhado ou Produção; versão (tag/commit).
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / traceId
+      description: Respostas de erro trazem um `traceId`. Cole-o aqui (sem dados pessoais).
