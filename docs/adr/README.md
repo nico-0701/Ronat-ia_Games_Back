@@ -27,3 +27,4 @@ O que melhora, o que piora, riscos aceitos e como mitigar.
 | [0001](0001-dois-repositorios.md) | Dois repositórios (Front e Back) e banco como serviço | Aceito |
 | [0002](0002-dotnet-monolito-modular.md) | .NET 10 LTS, monólito modular e módulos de jogo puros | Aceito |
 | [0003](0003-login-so-por-telefone.md) | Login só por telefone, sem SMS e sem senha | Aceito |
+| [0004](0004-sessoes-e-tokens.md) | Sessões: JWT curto, refresh rotativo e revogação imediata | Aceito |

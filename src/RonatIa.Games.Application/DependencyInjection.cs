@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using RonatIa.Games.Application.Auth;
+using RonatIa.Games.Application.Users;
 
 namespace RonatIa.Games.Application;
 
@@ -9,6 +11,10 @@ public static class DependencyInjection
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
+
+        services.AddScoped<AuthService>();
+        services.AddScoped<UserService>();
+
         return services;
     }
 }

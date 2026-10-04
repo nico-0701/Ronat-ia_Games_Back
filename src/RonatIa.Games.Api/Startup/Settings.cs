@@ -22,3 +22,15 @@ public sealed class CorsSettings
     /// <summary>Expressões regulares para origens variáveis (ex.: previews do Cloudflare Pages).</summary>
     public string[] AllowedOriginPatterns { get; set; } = [];
 }
+
+/// <summary>Limites de requisições por IP (seção <c>RateLimiting</c>). Sem o servidor atrás de um proxy, o IP é o do proxy.</summary>
+public sealed class RateLimitingSettings
+{
+    public bool Enabled { get; set; } = true;
+
+    public int AuthLoginPerMinute { get; set; } = 30;
+
+    public int AuthRegisterPerHour { get; set; } = 10;
+
+    public int AuthRefreshPerMinute { get; set; } = 60;
+}

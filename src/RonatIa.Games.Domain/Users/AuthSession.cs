@@ -11,6 +11,8 @@ public sealed class AuthSession
     public const string ReasonReuseDetected = "reuse_detected";
     public const string ReasonUserDeleted = "user_deleted";
     public const string ReasonAdmin = "admin";
+    public const string ReasonSessionLimit = "session_limit";
+    public const string ReasonAccountUnavailable = "account_unavailable";
 
     private AuthSession()
     {
@@ -19,6 +21,9 @@ public sealed class AuthSession
     public Guid Id { get; private set; }
 
     public Guid UserId { get; private set; }
+
+    /// <summary>Versão da linha (concorrência otimista): sobe a cada mudança de estado, para duas renovações simultâneas não gravarem as duas.</summary>
+    public int Version { get; private set; }
 
     public byte[] TokenHash { get; private set; } = [];
 
@@ -59,6 +64,19 @@ public sealed class AuthSession
         RotatedAt = now;
         LastUsedAt = now;
         ExpiresAt = now + lifetime;
+        Version++;
+    }
+
+    /// <summary>
+    /// Nova tentativa legítima dentro da janela de tolerância (o cliente não recebeu a resposta da rotação anterior):
+    /// troca só o token atual e mantém o anterior reconhecível, para tentativas repetidas continuarem valendo.
+    /// </summary>
+    public void ReplaceCurrentToken(byte[] newTokenHash, DateTimeOffset now, TimeSpan lifetime)
+    {
+        TokenHash = newTokenHash;
+        LastUsedAt = now;
+        ExpiresAt = now + lifetime;
+        Version++;
     }
 
     public void Revoke(string reason, DateTimeOffset now)
@@ -70,6 +88,7 @@ public sealed class AuthSession
 
         RevokedAt = now;
         RevokedReason = reason;
+        Version++;
     }
 
     private static string? Truncate(string? value, int max)
