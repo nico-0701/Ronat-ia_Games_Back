@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using RonatIa.Games.Api.Startup.Errors;
+using RonatIa.Games.Infrastructure.Persistence;
 
 namespace RonatIa.Games.Api.Startup;
 
@@ -27,7 +28,8 @@ public static class ApiServiceCollectionExtensions
         services.AddApiRateLimiting();
         services.AddApiOpenApi();
 
-        services.AddHealthChecks();
+        // "ready" só fica verde se o banco responde; "live" não depende de nada externo.
+        services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);
 
         // O app só é alcançável pelo proxy da hospedagem (Render), que define os cabeçalhos X-Forwarded-*.
         services.Configure<ForwardedHeadersOptions>(options =>
