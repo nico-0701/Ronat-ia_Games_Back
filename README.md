@@ -38,7 +38,44 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 
 ## Como rodar
 
-*(será detalhado junto com o esqueleto da solução)*
+**Pré-requisitos:** [.NET 10 SDK](https://dotnet.microsoft.com/download) (versão fixada em `global.json`).
+Para o banco local e os testes de integração: um PostgreSQL 17+ (instruções de banco local virão junto com a Fase 4).
+
+```bash
+# restaurar, compilar e testar
+dotnet build
+dotnet test
+
+# subir a API (http://localhost:5080)
+dotnet run --project src/RonatIa.Games.Api
+```
+
+Com a API no ar, em desenvolvimento:
+
+| URL | O que é |
+|---|---|
+| `http://localhost:5080/scalar/v1` | Documentação interativa da API (Scalar) |
+| `http://localhost:5080/openapi/v1.json` | Contrato OpenAPI (também versionado em `docs/openapi/v1.json`) |
+| `http://localhost:5080/health/live` | Processo respondendo |
+| `http://localhost:5080/api/v1/meta` | Versão da API, versão mínima do cliente e hora do servidor |
+
+**Contrato OpenAPI:** o arquivo `docs/openapi/v1.json` é verificado por um teste. Se a API mudar, atualize-o com
+`UPDATE_OPENAPI=1 dotnet test --filter OpenApiContractTests` (PowerShell: `$env:UPDATE_OPENAPI=1`) e inclua-o no commit.
+
+### Estrutura
+
+```
+src/
+  RonatIa.Games.Api/              controllers finos, SignalR, autenticação, pipeline HTTP
+  RonatIa.Games.Application/      casos de uso
+  RonatIa.Games.Domain/           entidades e regras da plataforma
+  RonatIa.Games.Infrastructure/   EF Core/Npgsql, segurança, imagens
+tests/
+  RonatIa.Games.Api.Tests/        testes de integração (API em memória)
+docs/                             ADRs, contrato OpenAPI e documentação
+```
+
+Segredos de desenvolvimento ficam fora do Git: use `dotnet user-secrets --project src/RonatIa.Games.Api` ou variáveis de ambiente (modelo em `.env.example`).
 
 ## Como contribuir
 
