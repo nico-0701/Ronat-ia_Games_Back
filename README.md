@@ -30,7 +30,7 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 |---|---|
 | [`docs/adr`](docs/adr) | Registros de decisões de arquitetura (ADRs) |
 | `docs/ARCHITECTURE.md` | Visão geral da arquitetura *(em breve)* |
-| `docs/DATABASE.md` | Modelo de dados *(em breve)* |
+| [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de dados, conexão, ambiente local e migrações |
 | `docs/API.md` | Convenções e contrato da API *(em breve)* |
 | `docs/SECURITY.md` | Modelo de ameaças e riscos aceitos *(em breve)* |
 | `docs/GAME_DEVELOPMENT.md` | Como criar um novo jogo *(em breve)* |
@@ -38,15 +38,21 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 
 ## Como rodar
 
-**Pré-requisitos:** [.NET 10 SDK](https://dotnet.microsoft.com/download) (versão fixada em `global.json`).
-Para o banco local e os testes de integração: um PostgreSQL 17+ (instruções de banco local virão junto com a Fase 4).
+**Pré-requisitos:** [.NET 10 SDK](https://dotnet.microsoft.com/download) (versão fixada em `global.json`) e um PostgreSQL local
+para o banco de desenvolvimento e os testes de integração: **Docker** (`docker compose up -d db`) **ou** um PostgreSQL 16+ instalado
+(`./scripts/dev-db.ps1` sobe um cluster privado, sem Docker). Detalhes em [`docs/DATABASE.md`](docs/DATABASE.md).
 
 ```bash
-# restaurar, compilar e testar
+# 1. banco local (porta 54329)
+docker compose up -d db          # ou, no Windows sem Docker:  ./scripts/dev-db.ps1
+
+# 2. restaurar ferramentas, aplicar migrações, compilar e testar
+dotnet tool restore
+dotnet ef database update --project src/RonatIa.Games.Infrastructure --startup-project src/RonatIa.Games.Api
 dotnet build
 dotnet test
 
-# subir a API (http://localhost:5080)
+# 3. subir a API (http://localhost:5080)
 dotnet run --project src/RonatIa.Games.Api
 ```
 
@@ -57,6 +63,7 @@ Com a API no ar, em desenvolvimento:
 | `http://localhost:5080/scalar/v1` | Documentação interativa da API (Scalar) |
 | `http://localhost:5080/openapi/v1.json` | Contrato OpenAPI (também versionado em `docs/openapi/v1.json`) |
 | `http://localhost:5080/health/live` | Processo respondendo |
+| `http://localhost:5080/health/ready` | Processo e banco respondendo |
 | `http://localhost:5080/api/v1/meta` | Versão da API, versão mínima do cliente e hora do servidor |
 
 **Contrato OpenAPI:** o arquivo `docs/openapi/v1.json` é verificado por um teste. Se a API mudar, atualize-o com
@@ -71,7 +78,9 @@ src/
   RonatIa.Games.Domain/           entidades e regras da plataforma
   RonatIa.Games.Infrastructure/   EF Core/Npgsql, segurança, imagens
 tests/
-  RonatIa.Games.Api.Tests/        testes de integração (API em memória)
+  RonatIa.Games.Domain.Tests/     testes unitários das regras de domínio
+  RonatIa.Games.Api.Tests/        testes de integração (API em memória + PostgreSQL real)
+scripts/                          banco local (dev-db.ps1)
 docs/                             ADRs, contrato OpenAPI e documentação
 ```
 
