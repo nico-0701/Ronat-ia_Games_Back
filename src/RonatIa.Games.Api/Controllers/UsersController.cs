@@ -10,12 +10,21 @@ namespace RonatIa.Games.Api.Controllers;
 /// <summary>A própria pessoa: perfil, avatar e exclusão da conta. A identidade vem sempre do token.</summary>
 [ApiController]
 [Route("api/v1/users")]
-public sealed class UsersController(UserService users) : ControllerBase
+public sealed class UsersController(UserService users, PrivacyService privacy) : ControllerBase
 {
     /// <summary>Perfil da própria pessoa.</summary>
     [HttpGet("me")]
     public async Task<ActionResult<UserDto>> GetMe(CancellationToken cancellationToken) =>
         await users.GetMeAsync(User.RequireUserId(), cancellationToken);
+
+    /// <summary>
+    /// Cópia de todos os dados pessoais da própria pessoa (LGPD: acesso e portabilidade): perfil, aparelhos conectados, grupos de que
+    /// participa e resultados das partidas. O telefone nunca é guardado em claro, então só os 4 últimos dígitos constam.
+    /// </summary>
+    [HttpGet("me/export")]
+    [EnableRateLimiting(RateLimitPolicies.Export)]
+    public async Task<ActionResult<PersonalDataExportDto>> Export(CancellationToken cancellationToken) =>
+        await privacy.ExportAsync(User.RequireUserId(), cancellationToken);
 
     /// <summary>Altera o nome e/ou escolhe um avatar pronto (só os campos informados mudam).</summary>
     [HttpPatch("me")]

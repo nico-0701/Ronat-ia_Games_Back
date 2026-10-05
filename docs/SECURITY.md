@@ -58,7 +58,7 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - **A mensagem é a visão de cada assinante**, montada pelo mesmo código do REST (a projeção do jogo): segredo de um jogador nunca vai na mensagem de outro. Testes com cliente SignalR real conferem que a palavra secreta não aparece nas mensagens de quem não pode vê-la, e que a mensagem é idêntica à resposta do REST.
 - **Autenticação:** o token vai na query (`access_token`) **só em `/hubs`** (o WebSocket não envia cabeçalho); em qualquer outra rota é ignorado. Os logs não registram query strings (os de requisição guardam só o caminho; os do framework ficam em `Warning`). A negociação e a conexão passam pela mesma validação do REST, inclusive a sessão de login revogada.
 - **Autorização contínua:** o `Subscribe` exige ser membro do grupo; antes de **cada** envio o servidor reconfere a participação no grupo e se o login daquele aparelho segue ativo. Quem saiu do grupo ou deslogou recebe `AccessRevoked` e nada mais; os outros aparelhos da mesma pessoa não são afetados. A conexão é encerrada pelo servidor quando o token expira (30 min).
-- **Limites:** 20 assinaturas por conexão, mensagens de entrada de até 16 KB, limite por IP também na negociação. Presença e assinantes ficam em memória (uma instância).
+- **Limites:** 20 assinaturas por conexão, mensagens de entrada de até 16 KB, **120 chamadas por minuto por conexão** (o limitador de requisições do ASP.NET não enxerga mensagens de uma conexão já aberta; passou do limite, a chamada falha com `rate_limit.exceeded` até a janela virar) e limite por IP também na negociação. Presença e assinantes ficam em memória (uma instância).
 
 ### Segredos e configuração
 - `Auth:PhonePepper` e `Jwt:SigningKey` são validados **na subida**: ausentes, curtos (< 32 bytes) ou iguais aos valores públicos de desenvolvimento fora de Development → a API **não inicia**.
@@ -70,10 +70,12 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - Validação nos DTOs (DataAnnotations) e regras de domínio (nomes: Unicode NFC, espaços colapsados, sem caracteres de controle ou invisíveis).
 - Telefone normalizado para E.164 (libphonenumber); só celulares e fixos válidos.
 - **Fotos de avatar** (ADR-0005): o arquivo enviado nunca é guardado nem repassado. O tipo é decidido pelo **conteúdo** (não pelo nome nem pelo `Content-Type`) e só JPEG, PNG, WebP e GIF passam; SVG, HTML e demais formatos são recusados. O servidor lê o cabeçalho **antes** de decodificar (lado máximo 8000 px, 25 megapixels, contra imagens "bomba"), decodifica, orienta, recorta, reduz e **reencoda** em WebP: tudo que estava escondido no original (EXIF/GPS, XMP, perfis, *polyglots*) é descartado. Limites: 3 MB por foto (`413` antes de ler o corpo quando o `Content-Length` já excede), 2 decodificações simultâneas (a hospedagem gratuita tem pouca memória) e 20 envios/hora por pessoa. A imagem é servida com `nosniff`, `Content-Security-Policy: default-src 'none'; sandbox` e tipo fixo `image/webp`.
+- **Corpo das requisições limitado a 1 MB** em todo o servidor (Kestrel; acima disso, `413 request.too_large`). Só o envio de foto sobe o próprio limite, para 3 MB, e continua checado antes de ler o corpo. Os JSON da API são minúsculos perto disso, então o teto global só serve para barrar abuso.
+- O cabeçalho `Server` não é enviado (não diz qual servidor é).
 - Erros nunca vazam exceções: `ProblemDetails` com `code` estável e `traceId`; 500 genérico para o inesperado.
 
 ### Abuso
-- Limite global por IP (600/min) e políticas próprias: login (30/min), cadastro (10/h), renovação (60/min) e envio de foto (20/h **por pessoa**). IP real via `X-Forwarded-For` (o app só é alcançável pelo proxy da hospedagem).
+- Limite global por IP (600/min) e políticas próprias: login (30/min), cadastro (10/h), renovação (60/min), envio de foto (20/h **por pessoa**), exportação dos dados pessoais (5/h por pessoa), criação de grupo (10/h), tentativa de entrar em grupo (10/min), criação de partida (30/h) e ação de jogo (240/min), todos por pessoa. IP real via `X-Forwarded-For` (o app só é alcançável pelo proxy da hospedagem).
 - **Cloudflare Turnstile** em login e cadastro, ligado quando `Turnstile:SecretKey` está definida; **falha fechada** se o Cloudflare não responder.
 - **Válvula de escape:** `Registration:Mode=closed` bloqueia novos cadastros sem afetar quem já tem conta.
 
@@ -90,6 +92,7 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - Logs estruturados sem telefone, nome, senhas ou tokens; só ids e códigos. Corpo das requisições não é registrado.
 - Retenção: a trilha de eventos de partidas encerradas é apagada após 60 dias e sessões de login expiradas ou encerradas, após 30 (limpeza automática, ADR-0009); o resultado e o placar das partidas ficam.
 - Exclusão de conta (LGPD): anonimização; o hash do telefone é substituído por um valor aleatório. Os vínculos com grupos são encerrados (as linhas ficam, apontando para "Jogador removido", para o histórico continuar íntegro); quem é dono de grupo com outras pessoas precisa transferir antes.
+- Acesso e portabilidade (LGPD): `GET /users/me/export` devolve uma cópia dos dados da própria pessoa (e só dela; o telefone nunca é guardado em claro, então consta apenas o final). O inventário completo dos dados, a base legal e a retenção estão em [LGPD.md](LGPD.md).
 
 ### Cadeia de suprimentos
 - Dependabot (NuGet, Actions, Docker), auditoria do NuGet, `gitleaks` no CI, *secret scanning* e *push protection* do GitHub.

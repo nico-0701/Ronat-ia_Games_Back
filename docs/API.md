@@ -71,6 +71,7 @@ enviada; prefixe `url` com a URL base da API). Sempre é um dos dois.
 - **Enviar foto:** `PUT /users/me/avatar`, `multipart/form-data`, campo `file`. Aceita JPEG, PNG, WebP e GIF de até **3 MB**. O servidor **recorta em quadrado pelo centro, reduz para 256×256, reencoda em WebP e descarta todos os metadados** (inclusive a localização do GPS); a rotação do EXIF é respeitada. O original nunca é guardado. Limite: 20 envios por hora por pessoa. Enviar de novo substitui (e apaga) a foto anterior.
 - **Remover a foto:** `DELETE /users/me/avatar` volta ao avatar padrão (idempotente).
 - **Ver a foto:** `GET /avatars/{id}` é público (é um `<img>` simples, sem token), não adivinhável e imutável: `Cache-Control: public, max-age=31536000, immutable`, com `ETag` (responde `304` a `If-None-Match`).
+- **Baixar os meus dados:** `GET /users/me/export` (LGPD: acesso e portabilidade) devolve um JSON com `profile` (nome, avatar, final do telefone, datas e aceite dos termos), `logins` (aparelhos, inclusive os já encerrados), `memberships` (grupos de que participa ou participou, com papel e situação) e `results` (resultado de cada partida encerrada). Só traz dados da própria pessoa e nunca o telefone completo nem segredos. Limite: 5 por hora por pessoa. O front pode oferecer o JSON como arquivo para salvar.
 - **Excluir a conta:** `DELETE /users/me` com `{ "confirmation": "EXCLUIR" }` (LGPD). Anonimiza os dados, apaga a foto, encerra todas as sessões e **libera o telefone** para um novo cadastro. Não dá para desfazer.
 
 ## Grupos e a senha do grupo

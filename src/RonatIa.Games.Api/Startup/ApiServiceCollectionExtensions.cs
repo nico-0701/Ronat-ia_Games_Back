@@ -55,6 +55,7 @@ public static class ApiServiceCollectionExtensions
                 options.ClientTimeoutInterval = TimeSpan.FromSeconds(45);
                 options.HandshakeTimeout = TimeSpan.FromSeconds(15);
                 options.MaximumReceiveMessageSize = 16 * 1024;
+                options.AddFilter<HubRateLimitFilter>();      // a ordem importa: o primeiro é o mais externo
                 options.AddFilter<AppExceptionHubFilter>();
             })
             .AddJsonProtocol(options =>

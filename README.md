@@ -33,6 +33,7 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de dados, conexão, ambiente local e migrações |
 | [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, grupos, partidas, endpoints e códigos de erro |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
+| [`docs/LGPD.md`](docs/LGPD.md) | Privacidade: inventário dos dados, direitos do titular, retenção e pontos em aberto (rascunho para revisão jurídica) |
 | [`docs/GAME_DEVELOPMENT.md`](docs/GAME_DEVELOPMENT.md) | Como criar um novo jogo (o contrato dos módulos, regras de ouro e um exemplo) |
 | [`docs/games/MIMICA.md`](docs/games/MIMICA.md) | O jogo Mímica: regras, configuração, ações, fases, a visão por jogador e o conteúdo |
 | [`docs/REALTIME.md`](docs/REALTIME.md) | Tempo real (SignalR): conexão, métodos, mensagens, receita para o cliente e segurança |

@@ -37,11 +37,17 @@ public sealed class RateLimitingSettings
     /// <summary>Envios de foto por pessoa, por hora.</summary>
     public int UploadPerHour { get; set; } = 20;
 
+    /// <summary>Exportações dos dados pessoais por pessoa, por hora.</summary>
+    public int ExportPerHour { get; set; } = 5;
+
     /// <summary>Grupos criados por pessoa, por hora.</summary>
     public int GroupCreatePerHour { get; set; } = 10;
 
     /// <summary>Tentativas de entrar em grupo (ou conferir a senha) por pessoa, por minuto.</summary>
     public int GroupJoinPerMinute { get; set; } = 10;
+
+    /// <summary>Chamadas ao hub de tempo real por conexão, por minuto (assinar, cancelar...); o tráfego normal usa poucas.</summary>
+    public int HubInvocationsPerMinute { get; set; } = 120;
 
     /// <summary>Partidas criadas por pessoa, por hora.</summary>
     public int SessionCreatePerHour { get; set; } = 30;

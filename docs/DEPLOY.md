@@ -103,7 +103,7 @@ No ASP.NET Core, `__` nas variáveis de ambiente equivale a `:` na configuraçã
 | `Client__MinClientVersion` | não (`0.0.0`) | não | abaixo dela o app pede atualização (APKs não se atualizam sozinhos) |
 | `PORT` | automática | não | o Render define |
 | `Docs__Enabled` | não (`false`) | não | liga a documentação interativa (`/scalar/v1`) fora do desenvolvimento |
-| `RateLimiting__*` | não | não | `Enabled`, `AuthLoginPerMinute`, `AuthRegisterPerHour`, `AuthRefreshPerMinute`, `UploadPerHour`, `GroupCreatePerHour`, `GroupJoinPerMinute`, `SessionCreatePerHour`, `SessionActionPerMinute` |
+| `RateLimiting__*` | não | não | `Enabled`, `AuthLoginPerMinute`, `AuthRegisterPerHour`, `AuthRefreshPerMinute`, `UploadPerHour`, `ExportPerHour`, `GroupCreatePerHour`, `GroupJoinPerMinute`, `HubInvocationsPerMinute`, `SessionCreatePerHour`, `SessionActionPerMinute` |
 | `Groups__*` | não | não | `MaxGroupsPerUser` (20), `MaxMembersPerGroup` (100) |
 | `Sessions__*` | não | não | `MaxActiveSessionsPerGroup` (5), `MaxEventsPerPage` (200) |
 | `Avatars__*` | não | não | `MaxUploadBytes` (3 MB), `Size` (256), `MaxSourceDimension` (8000), `MaxSourcePixels` (25 milhões), `WebpQuality` (80) |

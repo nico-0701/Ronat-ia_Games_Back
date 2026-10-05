@@ -13,6 +13,7 @@ public static class RateLimitPolicies
     public const string AuthRegister = "auth-register";
     public const string AuthRefresh = "auth-refresh";
     public const string Upload = "upload";
+    public const string Export = "export";
     public const string GroupCreate = "group-create";
     public const string GroupJoin = "group-join";
     public const string SessionCreate = "session-create";
@@ -52,6 +53,9 @@ public static class ApiRateLimiting
 
             options.AddPolicy(RateLimitPolicies.Upload, context =>
                 PerUser(context, settings => settings.UploadPerHour, TimeSpan.FromHours(1)));
+
+            options.AddPolicy(RateLimitPolicies.Export, context =>
+                PerUser(context, settings => settings.ExportPerHour, TimeSpan.FromHours(1)));
 
             options.AddPolicy(RateLimitPolicies.GroupCreate, context =>
                 PerUser(context, settings => settings.GroupCreatePerHour, TimeSpan.FromHours(1)));

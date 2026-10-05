@@ -21,6 +21,7 @@ public static class DependencyInjection
         services.AddScoped<AuthService>();
         services.AddScoped<UserService>();
         services.AddScoped<AvatarService>();
+        services.AddScoped<PrivacyService>();
 
         services.AddScoped<GroupAccess>();
         services.AddScoped<GroupService>();

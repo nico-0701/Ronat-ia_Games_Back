@@ -2421,6 +2421,40 @@
         ]
       }
     },
+    "/api/v1/users/me/export": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonalDataExportDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro. O corpo é um ProblemDetails com `code` (estável), `detail`, `traceId` e, em validações, `errors` por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/users/me/avatar": {
       "put": {
         "tags": [
@@ -2858,6 +2892,197 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "ExportedLoginDto": {
+        "required": [
+          "id",
+          "deviceLabel",
+          "createdAt",
+          "lastUsedAt",
+          "expiresAt",
+          "revokedAt",
+          "revokedReason"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "deviceLabel": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastUsedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "revokedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "revokedReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ExportedMembershipDto": {
+        "required": [
+          "memberId",
+          "groupId",
+          "groupName",
+          "role",
+          "status",
+          "joinedAt",
+          "leftAt"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupName": {
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/GroupRole"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MemberStatus"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leftAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "ExportedProfileDto": {
+        "required": [
+          "id",
+          "displayName",
+          "avatar",
+          "phoneLast4",
+          "createdAt",
+          "lastLoginAt",
+          "termsAcceptedAt",
+          "termsVersion"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/AvatarDto"
+          },
+          "phoneLast4": {
+            "type": "string"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastLoginAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "termsAcceptedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "termsVersion": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "ExportedResultDto": {
+        "required": [
+          "sessionId",
+          "groupId",
+          "gameId",
+          "finishedAt",
+          "team",
+          "rank",
+          "score",
+          "isWinner"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gameId": {
+            "type": "string"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "team": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isWinner": {
+            "type": "boolean"
           }
         }
       },
@@ -3462,6 +3687,13 @@
           }
         }
       },
+      "MemberStatus": {
+        "enum": [
+          "active",
+          "left",
+          "removed"
+        ]
+      },
       "MetaResponse": {
         "required": [
           "apiVersion",
@@ -3511,6 +3743,43 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GameStatsDto"
+            }
+          }
+        }
+      },
+      "PersonalDataExportDto": {
+        "required": [
+          "exportedAt",
+          "profile",
+          "logins",
+          "memberships",
+          "results"
+        ],
+        "type": "object",
+        "properties": {
+          "exportedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "profile": {
+            "$ref": "#/components/schemas/ExportedProfileDto"
+          },
+          "logins": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedLoginDto"
+            }
+          },
+          "memberships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedMembershipDto"
+            }
+          },
+          "results": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExportedResultDto"
             }
           }
         }

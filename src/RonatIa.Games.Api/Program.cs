@@ -5,6 +5,14 @@ using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// Limites do servidor: corpo de requisição de 1 MB por padrão (as rotas de foto elevam o limite só para si; o JSON da API é pequeno)
+// e sem o cabeçalho "Server".
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.AddServerHeader = false;
+    options.Limits.MaxRequestBodySize = 1024 * 1024;
+});
+
 // O Render injeta a porta na variável PORT.
 var port = Environment.GetEnvironmentVariable("PORT");
 if (!string.IsNullOrWhiteSpace(port))
