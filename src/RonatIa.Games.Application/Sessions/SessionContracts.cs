@@ -97,6 +97,7 @@ public sealed record GameSessionSummaryDto(
 /// </summary>
 /// <param name="Version">Sobe a cada mudança; serve para saber se há novidade.</param>
 /// <param name="CanManage">Anfitrião da partida ou administrador do grupo: pode configurar, iniciar, cancelar e encerrar.</param>
+/// <param name="MyMemberId">O membro do grupo de quem consultou (é quem é "eu" na lista de membros, mesmo assistindo sem jogar).</param>
 /// <param name="MyPlayerId">O jogador de quem consultou, ou nulo se só assiste.</param>
 /// <param name="View">A visão do jogo para esta pessoa (nula enquanto a partida não começou).</param>
 /// <param name="AllowedActions">As ações que esta pessoa pode enviar agora, calculadas pelo servidor.</param>
@@ -111,6 +112,7 @@ public sealed record GameSessionDto(
     int Version,
     Guid HostMemberId,
     bool CanManage,
+    Guid MyMemberId,
     Guid? MyPlayerId,
     JsonElement Config,
     IReadOnlyList<SessionPlayerDto> Players,

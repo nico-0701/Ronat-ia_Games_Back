@@ -30,3 +30,5 @@ O que melhora, o que piora, riscos aceitos e como mitigar.
 | [0004](0004-sessoes-e-tokens.md) | Sessões: JWT curto, refresh rotativo e revogação imediata | Aceito |
 | [0005](0005-fotos-de-avatar-no-postgres.md) | Fotos de avatar: processadas no servidor e guardadas no PostgreSQL | Aceito |
 | [0006](0006-grupos-senha-compartilhada-e-perfis-sem-conta.md) | Grupos: senha compartilhada, perfis sem conta e reivindicação | Aceito |
+| [0007](0007-motor-de-partidas-modulos-puros.md) | Motor de partidas: módulos de jogo puros, estado opaco, versão e idempotência | Aceito |
+| [0008](0008-tempo-real-signalr-avisa-e-entrega-a-visao.md) | Tempo real: o hub avisa e entrega a visão; comandos pelo REST | Aceito |

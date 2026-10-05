@@ -53,6 +53,13 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - **Limites contra abuso:** 5 partidas abertas por grupo, 30 criações/hora e 240 ações/minuto por pessoa; a leitura da trilha é paginada.
 - **Módulos de jogo são código confiável** (revisado como o resto do repositório), mas isolados por construção: dependem só de `Abstractions` (sem banco, rede nem relógio) e os erros que lançam viram respostas 4xx com código estável, sem vazar pilha.
 
+### Tempo real (SignalR)
+- **O hub não executa ações**: só avisa e entrega a visão (ADR-0008). Mudar o estado continua passando pelo REST, com sua autorização, idempotência e concorrência.
+- **A mensagem é a visão de cada assinante**, montada pelo mesmo código do REST (a projeção do jogo): segredo de um jogador nunca vai na mensagem de outro. Testes com cliente SignalR real conferem que a palavra secreta não aparece nas mensagens de quem não pode vê-la, e que a mensagem é idêntica à resposta do REST.
+- **Autenticação:** o token vai na query (`access_token`) **só em `/hubs`** (o WebSocket não envia cabeçalho); em qualquer outra rota é ignorado. Os logs não registram query strings (os de requisição guardam só o caminho; os do framework ficam em `Warning`). A negociação e a conexão passam pela mesma validação do REST, inclusive a sessão de login revogada.
+- **Autorização contínua:** o `Subscribe` exige ser membro do grupo; antes de **cada** envio o servidor reconfere a participação no grupo e se o login daquele aparelho segue ativo. Quem saiu do grupo ou deslogou recebe `AccessRevoked` e nada mais; os outros aparelhos da mesma pessoa não são afetados. A conexão é encerrada pelo servidor quando o token expira (30 min).
+- **Limites:** 20 assinaturas por conexão, mensagens de entrada de até 16 KB, limite por IP também na negociação. Presença e assinantes ficam em memória (uma instância).
+
 ### Segredos e configuração
 - `Auth:PhonePepper` e `Jwt:SigningKey` são validados **na subida**: ausentes, curtos (< 32 bytes) ou iguais aos valores públicos de desenvolvimento fora de Development → a API **não inicia**.
 - `appsettings.json` não traz segredos; segredos reais vêm de variáveis de ambiente (Render) ou `dotnet user-secrets` (desenvolvimento).

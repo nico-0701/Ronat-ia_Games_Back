@@ -2787,6 +2787,7 @@
           "version",
           "hostMemberId",
           "canManage",
+          "myMemberId",
           "myPlayerId",
           "config",
           "players",
@@ -2829,6 +2830,10 @@
           },
           "canManage": {
             "type": "boolean"
+          },
+          "myMemberId": {
+            "type": "string",
+            "format": "uuid"
           },
           "myPlayerId": {
             "type": [

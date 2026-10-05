@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using RonatIa.Games.Api.Realtime;
 using RonatIa.Games.Api.Startup;
 using RonatIa.Games.Application.Sessions;
 
@@ -12,6 +13,7 @@ namespace RonatIa.Games.Api.Controllers;
 /// </summary>
 [ApiController]
 [Route("api/v1")]
+[NotifySessionChanged]
 public sealed class SessionsController(SessionLobbyService lobby, SessionPlayService play) : ControllerBase
 {
     /// <summary>Cria uma partida no lobby. Quem cria vira o anfitrião e já entra como jogador.</summary>

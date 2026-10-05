@@ -150,6 +150,7 @@ public sealed class SessionReader(
             session.Version,
             session.HostMemberId,
             access.CanManage,
+            access.Me.Id,
             access.MyPlayer?.Id,
             GameJson.Parse(session.ConfigJson),
             players,

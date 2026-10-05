@@ -35,6 +35,7 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
 | [`docs/GAME_DEVELOPMENT.md`](docs/GAME_DEVELOPMENT.md) | Como criar um novo jogo (o contrato dos módulos, regras de ouro e um exemplo) |
 | [`docs/games/MIMICA.md`](docs/games/MIMICA.md) | O jogo Mímica: regras, configuração, ações, fases, a visão por jogador e o conteúdo |
+| [`docs/REALTIME.md`](docs/REALTIME.md) | Tempo real (SignalR): conexão, métodos, mensagens, receita para o cliente e segurança |
 | `docs/DEPLOY.md` | Render, Supabase, variáveis e limites dos planos gratuitos *(em breve)* |
 
 ## Como rodar

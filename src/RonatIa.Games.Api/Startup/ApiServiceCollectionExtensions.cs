@@ -1,6 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.SignalR;
+using RonatIa.Games.Api.Realtime;
 using RonatIa.Games.Api.Startup.Errors;
 using RonatIa.Games.Infrastructure.Persistence;
 
@@ -40,6 +42,24 @@ public static class ApiServiceCollectionExtensions
         services.AddApiRateLimiting();
         services.AddApiOpenApi();
         services.AddGameModules();
+
+        // Tempo real: o hub avisa e entrega a visão de cada pessoa; quem age continua usando o REST.
+        services.AddSingleton<SessionSubscriptions>();
+        services.AddSingleton<SessionBroadcastQueue>();
+        services.AddHostedService<SessionBroadcaster>();
+        services.AddSignalR(options =>
+            {
+                options.KeepAliveInterval = TimeSpan.FromSeconds(15);      // o proxy do Render derruba conexões ociosas
+                options.ClientTimeoutInterval = TimeSpan.FromSeconds(45);
+                options.HandshakeTimeout = TimeSpan.FromSeconds(15);
+                options.MaximumReceiveMessageSize = 16 * 1024;
+                options.AddFilter<AppExceptionHubFilter>();
+            })
+            .AddJsonProtocol(options =>
+            {
+                options.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+                options.PayloadSerializerOptions.NumberHandling = JsonNumberHandling.Strict;
+            });
 
         // "ready" só fica verde se o banco responde; "live" não depende de nada externo.
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);

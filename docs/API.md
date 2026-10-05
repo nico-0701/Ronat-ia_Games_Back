@@ -133,7 +133,7 @@ stateDiagram-v2
 - **Começar:** `POST /start` confere o número de jogadores e, em jogos com times, que todos estejam alocados e cada time completo (`session.not_enough_players`, `session.teams_incomplete`...).
 - **A visão da partida:** `GET /sessions/{id}` devolve o lobby, os placares (`players[].score`, `teamScores`) e a `view`, um JSON **próprio do jogo e só do que quem consultou pode ver** (a carta do mímico não aparece para os outros, nem na trilha de eventos). `allowedActions` diz o que esta pessoa pode enviar agora e `deadlineAt` o prazo da fase; o cliente não deduz isso. Membros do grupo que não jogam assistem com a visão pública (`myPlayerId` nulo).
 - **Agir:** `POST /sessions/{id}/actions` com `{ clientActionId, type, payload }`. O jogo valida (quem pode, em que fase, dentro do prazo) e o servidor calcula os pontos. **`clientActionId` (UUID gerado pelo cliente) torna o envio idempotente:** reenviar o mesmo (rede ruim, duas abas) devolve o estado atual com `replayed: true`, sem reaplicar. Recusas do jogo: `400` (ação malformada), `403` (não é a sua vez ou papel) ou `409` (outra fase, prazo vencido), cada uma com o `code` do jogo (`jogo.motivo`).
-- **Sincronização:** `version` sobe a cada mudança; o cliente compara para saber se há novidade e, ao reconectar, busca `GET /sessions/{id}` (o tempo real por SignalR, que só *avisa* que há novidade, vem na próxima fase).
+- **Sincronização:** `version` sobe a cada mudança; o cliente compara para saber se há novidade. O **tempo real** (SignalR, `/hubs/sessions`) entrega a cada pessoa a partida com a visão própria dela a cada mudança, e a presença de quem está online: veja [`REALTIME.md`](REALTIME.md). Sem tempo real (ou ao reconectar), `GET /sessions/{id}` mostra o mesmo estado.
 - **Concorrência:** se várias pessoas agem ao mesmo tempo, o servidor as serializa; a que perde é reavaliada sobre o estado novo (pode virar uma recusa legítima do jogo, ex.: "o turno já passou"). Só persistindo o conflito, `409 session.concurrent_update` (o lobby também: tente de novo).
 - **Trilha:** `GET /sessions/{id}/events?after=<seq>&limit=` devolve os eventos em ordem, com sequência contínua e **só fatos públicos** (o conteúdo das ações nunca é gravado).
 - **Fim:** o jogo encerra sozinho (`status: finished`, `standings` com posição, pontos e vencedores) ou o anfitrião encerra antes (`POST /finish`, vale o placar do momento). `POST /cancel` abandona sem resultado. **Revanche:** `POST /rematch` cria uma partida nova no lobby com o mesmo jogo, configuração e jogadores (e times) da que terminou ou foi cancelada.
@@ -192,7 +192,7 @@ stateDiagram-v2
 | POST | `/api/v1/sessions/{id}/rematch` | gerente | nova partida no lobby com o mesmo jogo, configuração e jogadores |
 | GET | `/health/live`, `/health/ready` | não | processo; processo + banco |
 
-*Tempo real (SignalR), ranking e histórico entram nas próximas fases. "Gerente" = anfitrião da partida ou administrador do grupo.*
+*O tempo real (SignalR) está em [`REALTIME.md`](REALTIME.md). Ranking e histórico entram na próxima fase. "Gerente" = anfitrião da partida ou administrador do grupo.*
 
 ## Códigos de erro atuais
 

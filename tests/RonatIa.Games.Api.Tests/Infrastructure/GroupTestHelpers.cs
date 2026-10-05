@@ -30,6 +30,9 @@ public sealed class Person
 
     public required HttpClient Client { get; init; }
 
+    /// <summary>O telefone com que a conta foi criada (para entrar de novo em outro "aparelho").</summary>
+    public string? Phone { get; init; }
+
     public Guid UserId => Auth.User.Id;
 
     public string Name => Auth.User.DisplayName;
@@ -54,8 +57,9 @@ public static class GroupTestHelpers
 {
     public static async Task<Person> NewPersonAsync(this WebApplicationFactory<Program> factory, string name = "Pessoa Teste")
     {
-        var auth = await factory.CreateClient().RegisterAsync(name: name);
-        return new Person { Auth = auth, Client = factory.ClientFor(auth.AccessToken) };
+        var phone = TestPhones.Next();
+        var auth = await factory.CreateClient().RegisterAsync(phone, name);
+        return new Person { Auth = auth, Client = factory.ClientFor(auth.AccessToken), Phone = phone };
     }
 
     public static async Task<GroupDetailDto> CreateGroupAsync(this Person person, string name = "Grupo de Teste")

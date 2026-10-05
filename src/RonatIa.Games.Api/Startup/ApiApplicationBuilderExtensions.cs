@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http.Connections;
 using Microsoft.AspNetCore.RateLimiting;
+using RonatIa.Games.Api.Realtime;
 using Scalar.AspNetCore;
 using Serilog;
 using Serilog.Events;
@@ -50,6 +52,15 @@ public static class ApiApplicationBuilderExtensions
 
         // Negado por padrão: todo controller exige login, salvo [AllowAnonymous] explícito.
         app.MapControllers().RequireAuthorization();
+
+        // Tempo real das partidas. O token vai na query (access_token) só aqui, porque o WebSocket não envia cabeçalho; a conexão
+        // é encerrada quando o token expira (o cliente reconecta com o token renovado).
+        app.MapHub<SessionsHub>("/hubs/sessions", options =>
+            {
+                options.Transports = HttpTransportType.WebSockets | HttpTransportType.LongPolling;
+                options.CloseOnAuthenticationExpiration = true;
+            })
+            .RequireAuthorization();
 
         // Saúde: "live" só diz que o processo responde; "ready" executa as verificações marcadas com a tag "ready".
         app.MapHealthChecks("/health/live", new HealthCheckOptions { Predicate = _ => false }).AllowAnonymous().DisableRateLimiting();
