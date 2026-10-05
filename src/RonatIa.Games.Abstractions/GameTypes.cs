@@ -47,7 +47,8 @@ public sealed class ConfigResult
 /// <param name="PlayerId">Identifica o jogador na partida (não é o id da conta).</param>
 /// <param name="Team">Número do time (0, 1...), ou nulo quando o jogo não tem times.</param>
 /// <param name="Seat">Ordem de entrada no lobby, de 0 em diante.</param>
-public sealed record SetupPlayer(Guid PlayerId, int? Team, int Seat);
+/// <param name="HasAccount">Falso para um perfil sem conta (quem não tem celular): o anfitrião age por essa pessoa, e o jogo decide o que isso muda (ex.: quem vê a carta).</param>
+public sealed record SetupPlayer(Guid PlayerId, int? Team, int Seat, bool HasAccount = true);
 
 public sealed record GameSetup(Guid SessionId, IReadOnlyList<SetupPlayer> Players, JsonElement Config);
 

@@ -34,6 +34,7 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, grupos, partidas, endpoints e códigos de erro |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
 | [`docs/GAME_DEVELOPMENT.md`](docs/GAME_DEVELOPMENT.md) | Como criar um novo jogo (o contrato dos módulos, regras de ouro e um exemplo) |
+| [`docs/games/MIMICA.md`](docs/games/MIMICA.md) | O jogo Mímica: regras, configuração, ações, fases, a visão por jogador e o conteúdo |
 | `docs/DEPLOY.md` | Render, Supabase, variáveis e limites dos planos gratuitos *(em breve)* |
 
 ## Como rodar
@@ -88,10 +89,12 @@ src/
   RonatIa.Games.Application/      casos de uso
   RonatIa.Games.Domain/           entidades e regras da plataforma
   RonatIa.Games.Abstractions/     contrato dos jogos (IGameModule): os módulos dependem só disto
+  Games/RonatIa.Games.Mimica/      o jogo Mímica (regras puras e as 640 cartas)
   RonatIa.Games.Infrastructure/   EF Core/Npgsql, segurança, imagens
 tests/
   RonatIa.Games.Domain.Tests/     testes unitários das regras de domínio
   RonatIa.Games.Abstractions.Tests/  contrato dos jogos e o exemplo de GAME_DEVELOPMENT.md
+  RonatIa.Games.Mimica.Tests/     regras, segredo e baralho da Mímica (sem infraestrutura)
   RonatIa.Games.Infrastructure.Tests/  telefone, JWT, refresh token, Turnstile
   RonatIa.Games.Api.Tests/        testes de integração (API em memória + PostgreSQL real)
 scripts/                          banco local (dev-db.ps1)

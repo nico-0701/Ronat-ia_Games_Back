@@ -9,6 +9,11 @@
     <ProjectReference Include="..\RonatIa.Games.Infrastructure\RonatIa.Games.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- Os jogos instalados (cada módulo depende só de RonatIa.Games.Abstractions; ver docs/GAME_DEVELOPMENT.md). -->
+  <ItemGroup>
+    <ProjectReference Include="..\Games\RonatIa.Games.Mimica\RonatIa.Games.Mimica.csproj" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />

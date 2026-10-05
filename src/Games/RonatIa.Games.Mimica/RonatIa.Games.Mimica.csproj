@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Módulo do jogo Mímica: regras puras e o conteúdo (640 cartas). Depende SÓ de RonatIa.Games.Abstractions. -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\RonatIa.Games.Abstractions\RonatIa.Games.Abstractions.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- WithCulture="false": sem isto o MSBuild lê "pt-BR" do nome do arquivo como cultura e move o recurso para um satélite. -->
+    <EmbeddedResource Include="Content\prompts.pt-BR.json" LogicalName="prompts.pt-BR.json" WithCulture="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="RonatIa.Games.Mimica.Tests" />
+  </ItemGroup>
+
+</Project>

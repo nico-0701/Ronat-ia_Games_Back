@@ -26,6 +26,7 @@ public interface IGameModule
 | Tipo | Para quê |
 |---|---|
 | `GameDefinition` | `Id` (slug estável, ex.: `mimica`), `Name`, `Description`, `RulesVersion`, `MinPlayers`/`MaxPlayers`, `TeamCount` (0 = cada um por si; N = N times), `MinPlayersPerTeam` e `ConfigDefaults` (JSON; a tela de opções do cliente parte dele). |
+| `GameSetup` | o que `Start` recebe: os jogadores (`SetupPlayer`: `PlayerId`, `Team`, `Seat` e `HasAccount`) e a configuração já normalizada. `HasAccount` é falso para um **perfil sem conta** (quem não tem celular): o anfitrião age por essa pessoa, e o jogo decide o que isso muda (na Mímica, o anfitrião passa a ver a carta do mímico sem conta). |
 | `GameState` | `SchemaVersion` + `Data` (JSON). **Opaco para a plataforma.** Use `GameState.From(versão, objeto)` e `estado.Read<T>()`. Suba o `SchemaVersion` quando mudar o formato e saiba ler o antigo. |
 | `GameAction` | `Type` + `Payload` (objeto JSON). `action.ReadPayload<T>()` lê os dados e, se não baterem com o tipo, já lança a recusa `action.invalid_payload` (400). |
 | `GameActor` | quem age ou olha: `PlayerId` (nulo = só assiste ou gerencia), `Team` e `IsHost` (anfitrião da partida **ou administrador do grupo**). |

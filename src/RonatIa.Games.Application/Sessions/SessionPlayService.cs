@@ -51,9 +51,16 @@ public sealed class SessionPlayService(
 
         CheckLineup(definition, players);
 
+        // O jogo precisa saber quem não tem conta (perfil sem celular): o anfitrião age por essa pessoa.
+        var memberIds = players.Select(p => p.MemberId).ToList();
+        var hasAccount = await db.GroupMembers.AsNoTracking()
+            .Where(m => memberIds.Contains(m.Id))
+            .Select(m => new { m.Id, HasAccount = m.UserId != null })
+            .ToDictionaryAsync(x => x.Id, x => x.HasAccount, cancellationToken);
+
         var setup = new GameSetup(
             session.Id,
-            players.Select(p => new SetupPlayer(p.Id, p.TeamNo, p.Seat)).ToList(),
+            players.Select(p => new SetupPlayer(p.Id, p.TeamNo, p.Seat, hasAccount.GetValueOrDefault(p.MemberId, true))).ToList(),
             GameJson.Parse(session.ConfigJson));
 
         var transition = Run(() => access.Module.Start(setup, reader.NewContext()));
