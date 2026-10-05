@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using RonatIa.Games.Domain.Groups;
 using RonatIa.Games.Domain.Users;
 
 namespace RonatIa.Games.Application.Abstractions;
@@ -15,6 +16,10 @@ public interface IAppDbContext
     DbSet<Avatar> Avatars { get; }
 
     DbSet<AuthSession> AuthSessions { get; }
+
+    DbSet<Group> Groups { get; }
+
+    DbSet<GroupMember> GroupMembers { get; }
 
     DatabaseFacade Database { get; }
 

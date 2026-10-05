@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddOptions<RegistrationOptions>().Bind(configuration.GetSection(RegistrationOptions.SectionName));
         services.AddOptions<TurnstileOptions>().Bind(configuration.GetSection(TurnstileOptions.SectionName));
         services.AddOptions<AvatarOptions>().Bind(configuration.GetSection(AvatarOptions.SectionName));
+        services.AddOptions<GroupOptions>().Bind(configuration.GetSection(GroupOptions.SectionName));
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
 
