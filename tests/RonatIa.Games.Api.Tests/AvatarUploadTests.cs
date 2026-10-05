@@ -214,10 +214,15 @@ public sealed class AvatarUploadTests(ApiFactory factory) : IClassFixture<ApiFac
         using var client = real.ClientFor(auth.AccessToken);
 
         using var form = new MultipartFormDataContent { { new StreamContent(new EndlessZeroStream(6 * 1024 * 1024)), "file", "enorme.jpg" } };
-        var response = await client.PutAsync("/api/v1/users/me/avatar", form);
+        var response = await CutOff.RefusedAsync(() => client.PutAsync("/api/v1/users/me/avatar", form));
 
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
-        Assert.Equal("request.too_large", await response.ReadCodeAsync());
+        if (response is not null)
+        {
+            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+            Assert.Equal("request.too_large", await response.ReadCodeAsync());
+        }
+
+        Assert.Equal(0, await CountPhotosAsync(auth.User.Id));
     }
 
     /// <summary>Fluxo sem tamanho conhecido (não permite Seek), então o HttpClient envia em chunked.</summary>

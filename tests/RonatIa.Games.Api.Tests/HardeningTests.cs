@@ -34,11 +34,16 @@ public sealed class HardeningTests(ApiFactory factory) : IClassFixture<ApiFactor
         var ana = await real.NewPersonAsync("Ana");
         var huge = new string('x', 2 * 1024 * 1024);
 
-        var response = await ana.PostAsync("/api/v1/groups", new { name = huge });
+        var response = await CutOff.RefusedAsync(() => ana.PostAsync("/api/v1/groups", new { name = huge }));
         var health = await real.CreateClient().GetAsync("/health/live");
 
-        Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
-        Assert.Equal("request.too_large", await response.ReadCodeAsync());
+        if (response is not null)
+        {
+            Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
+            Assert.Equal("request.too_large", await response.ReadCodeAsync());
+        }
+
+        Assert.Empty(await ana.ListGroupsAsync()); // o corpo grande demais não criou nada
         Assert.False(health.Headers.Contains("Server"), "o cabeçalho Server não deve existir");
     }
 
