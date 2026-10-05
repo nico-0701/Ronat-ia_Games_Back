@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using RonatIa.Games.Application.Abstractions;
 using RonatIa.Games.Application.Auth;
+using RonatIa.Games.Application.Groups;
 using RonatIa.Games.Domain.Errors;
 using RonatIa.Games.Domain.Users;
 
@@ -10,6 +11,7 @@ namespace RonatIa.Games.Application.Users;
 public sealed class UserService(
     IAppDbContext db,
     AvatarService avatars,
+    GroupService groups,
     ISessionValidator sessionValidator,
     TimeProvider time)
 {
@@ -95,6 +97,9 @@ public sealed class UserService(
         var user = await LoadAsync(userId, tracking: true, cancellationToken);
         var now = time.GetUtcNow();
         var photoId = user.AvatarPhotoId;
+
+        // Quem é dono de grupo com outras pessoas precisa transferir a propriedade antes (409); o resto é encerrado aqui.
+        await groups.PrepareAccountDeletionAsync(userId, now, cancellationToken);
 
         var sessions = await db.AuthSessions
             .Where(s => s.UserId == userId && s.RevokedAt == null)

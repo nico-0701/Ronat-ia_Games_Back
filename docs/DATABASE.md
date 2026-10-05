@@ -57,7 +57,40 @@ Uma linha por aparelho conectado. Guarda só o **hash** do *refresh token*; a ca
 | `previous_token_hash`, `rotated_at` | bytea, timestamptz | índice parcial (`previous_token_hash IS NOT NULL`) |
 | `device_label`, `created_at`, `last_used_at`, `expires_at`, `revoked_at`, `revoked_reason` | | índices em `user_id` e `expires_at` |
 
-> As demais tabelas (grupos, membros, partidas, eventos, pontuação, resultados) entram junto com cada funcionalidade, uma migração por PR.
+### `app.groups`
+
+Grupo de amigos (ADR-0006). Excluir é **lógico** (`deleted_at`).
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `id` | uuid | PK |
+| `name` | varchar(80) | `CHECK (1 a 80 caracteres)`; a regra de negócio (2 a 40) fica no domínio |
+| `invite_code` | char(8) | a *senha do grupo*; **UNIQUE** (inclusive entre grupos excluídos: o código nunca é reaproveitado); `CHECK ~ '^[A-HJ-KM-NP-TV-Z2-9]{8}$'` (sem I, L, O, U, 0 e 1) |
+| `invite_enabled` | boolean | desligada, ninguém novo entra |
+| `created_at`, `updated_at`, `deleted_at` | timestamptz | |
+
+### `app.group_members`
+
+Quem participa de um grupo: **pessoa com conta** (`user_id` preenchido; nome e avatar são os da conta) ou **perfil sem conta** (`user_id` nulo, com nome e avatar próprios, que alguém pode assumir ao entrar). **A linha nunca é apagada**: sair ou ser removido só muda o `status`, para o histórico de partidas continuar apontando para o membro.
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `id` | uuid | PK (identifica a pessoa **no grupo**, não na plataforma) |
+| `group_id` | uuid | FK `groups.id`, `ON DELETE CASCADE` |
+| `user_id` | uuid, nulo | FK `users.id`, `ON DELETE RESTRICT` (contas são anonimizadas, nunca apagadas); nulo = perfil sem conta |
+| `display_name`, `avatar_preset`, `avatar_photo_id` | varchar(60), varchar(20), uuid | só para perfis sem conta, que têm nome e **exatamente um** avatar; quem tem conta deixa os três nulos (`ck_group_members_profile_fields`); `avatar_photo_id` → `avatars.id` |
+| `role` | varchar(20) | `member`, `admin`, `owner`; dono tem de ter conta e perfil só é `member` (`ck_group_members_owner_has_account`, `ck_group_members_profile_is_member`) |
+| `status` | varchar(20) | `active`, `left`, `removed`; `left_at` preenchido **se e somente se** não for `active` (`ck_group_members_left_at`) |
+| `joined_at`, `left_at`, `updated_at` | timestamptz | |
+| `version` | int | concorrência otimista (duas pessoas assumindo o mesmo perfil, duas trocas de papel) |
+
+Índices que fazem parte das regras (não só desempenho):
+
+- `ux_group_members_one_active_owner`: **único** em `(group_id)` onde `role = 'owner' AND status = 'active'`, no máximo um dono ativo por grupo. A transferência de propriedade rebaixa o dono atual e depois promove o novo, em duas etapas numa transação.
+- `ux_group_members_group_user`: **único** em `(group_id, user_id)` onde `user_id IS NOT NULL`, uma linha por pessoa e grupo (perfis sem conta podem se repetir).
+- `ix_group_members_user_active` (`user_id` onde ativo) para "meus grupos"; `ix_group_members_group_id` para listar os membros.
+
+> As demais tabelas (partidas, eventos, pontuação, resultados) entram junto com cada funcionalidade, uma migração por PR.
 
 ## Conexão
 

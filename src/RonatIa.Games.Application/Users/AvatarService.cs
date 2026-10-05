@@ -41,10 +41,11 @@ public sealed class AvatarService(IAppDbContext db, IAvatarImageProcessor proces
         return new AvatarContent(avatar.Data, avatar.ContentType, Convert.ToHexString(avatar.Sha256).ToLowerInvariant());
     }
 
-    /// <summary>Apaga a foto se nenhuma conta (nem membro de grupo) aponta para ela.</summary>
+    /// <summary>Apaga a foto se nenhuma conta (nem perfil de grupo sem conta) aponta para ela.</summary>
     public async Task DeleteIfUnreferencedAsync(Guid avatarId, CancellationToken cancellationToken)
     {
-        var inUse = await db.Users.AnyAsync(u => u.AvatarPhotoId == avatarId, cancellationToken);
+        var inUse = await db.Users.AnyAsync(u => u.AvatarPhotoId == avatarId, cancellationToken)
+            || await db.GroupMembers.AnyAsync(m => m.AvatarPhotoId == avatarId, cancellationToken);
         if (!inUse)
         {
             await db.Avatars.Where(a => a.Id == avatarId).ExecuteDeleteAsync(cancellationToken);

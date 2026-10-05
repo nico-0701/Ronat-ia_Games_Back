@@ -73,6 +73,46 @@ enviada; prefixe `url` com a URL base da API). Sempre é um dos dois.
 - **Ver a foto:** `GET /avatars/{id}` é público (é um `<img>` simples, sem token), não adivinhável e imutável: `Cache-Control: public, max-age=31536000, immutable`, com `ETag` (responde `304` a `If-None-Match`).
 - **Excluir a conta:** `DELETE /users/me` com `{ "confirmation": "EXCLUIR" }` (LGPD). Anonimiza os dados, apaga a foto, encerra todas as sessões e **libera o telefone** para um novo cadastro. Não dá para desfazer.
 
+## Grupos e a senha do grupo
+
+Quem cria um grupo é o **dono** e recebe a *senha do grupo* (8 caracteres, ex.: `K7RM4PXT`) para compartilhar com os amigos; quem faz login com o telefone e informa a senha entra no grupo (ADR-0006).
+
+```mermaid
+sequenceDiagram
+    participant D as Dono
+    participant A as API
+    participant F as Amigo
+    D->>A: POST /groups { name }
+    A-->>D: 201 { id, inviteCode, members... }
+    D-->>F: compartilha a senha (WhatsApp, voz...)
+    F->>A: POST /groups/lookup { code }
+    A-->>F: 200 { name, memberCount, claimableMembers: [perfis sem conta] }
+    F->>A: POST /groups/join { code, claimMemberId? }
+    A-->>F: 200 { grupo, membros, myRole: member }
+```
+
+- **A senha:** 8 caracteres de um alfabeto sem `I`, `L`, `O`, `U`, `0` e `1`. Maiúsculas, minúsculas, espaços e hífen são ignorados (`k7rm-4pxt`). Todo membro vê a senha (`inviteCode`) para repassar; dono e administradores podem **desativá-la** (`PATCH { inviteEnabled: false }`; enquanto desativada, `inviteCode` vem `null`) ou **gerar outra** (`POST /groups/{id}/invite-code`), que invalida a antiga na hora. Senha errada, desativada ou de grupo excluído respondem igual: `404 group.invalid_code`.
+- **Conferir antes de entrar:** `POST /groups/lookup` devolve o nome, quantas pessoas há, se você já é membro e os **perfis sem conta** que dá para assumir. Conferir não entra no grupo. Entrar e conferir dividem o mesmo limite (10 por minuto por pessoa).
+- **Entrar é idempotente:** quem já é membro recebe o grupo como está. Quem já esteve e saiu volta como **membro comum**, com o mesmo vínculo (e o histórico dele).
+- **Papéis:** `owner` (um por grupo), `admin` e `member`.
+
+  | Ação | Dono | Admin | Membro |
+  |---|:-:|:-:|:-:|
+  | Ver o grupo, a senha e os membros; sair | ✓ (sair: não) | ✓ | ✓ |
+  | Renomear; ligar/desligar/gerar a senha | ✓ | ✓ | |
+  | Criar, editar e remover perfis sem conta (nome, avatar, foto) | ✓ | ✓ | |
+  | Remover membros comuns | ✓ | ✓ | |
+  | Remover administradores | ✓ | | |
+  | Promover a admin e rebaixar a membro | ✓ | | |
+  | Transferir a propriedade; excluir o grupo | ✓ | | |
+
+  O dono não sai nem é removido: transfere a propriedade (`POST /groups/{id}/transfer-ownership`, e ele vira admin) ou exclui o grupo (`DELETE /groups/{id}` com `{ "confirmation": "EXCLUIR" }`; lógico, o histórico fica).
+- **Membros sem conta (perfis):** nome e avatar próprios, criados e geridos por dono/admin, para quem ainda não usa o app (ou para trazer a família do app antigo). Aparecem em `members` com `hasAccount: false`. Ao entrar com a senha, uma pessoa pode **assumir** um perfil (`claimMemberId`): o perfil vira a conta dela, no mesmo `member.id`, e o histórico vai junto; nome e avatar passam a ser os da conta. Só perfis ativos do mesmo grupo podem ser assumidos (`409 group.claim_unavailable`); se duas pessoas assumirem o mesmo perfil ao mesmo tempo, uma vence e a outra recebe esse `409`.
+- **Quem não é membro recebe `404 group.not_found`**, nunca 403: o servidor não revela que o grupo existe.
+- **Limites:** 20 grupos por pessoa, 100 membros por grupo (contando perfis; assumir um perfil não aumenta o grupo), 10 grupos criados por hora e por pessoa.
+- **Excluir a conta:** quem é dono de grupo com outras pessoas precisa transferir a propriedade antes (`409 user.owns_groups`, com os nomes em `errors.groups`); os grupos em que é a única pessoa com conta são excluídos junto.
+- **Identificadores:** `member.id` identifica a pessoa **dentro do grupo** (é o que o histórico de partidas usa); não é o id da conta.
+
 ## Endpoints atuais
 
 | Método | Rota | Auth | Descrição |
@@ -92,9 +132,24 @@ enviada; prefixe `url` com a URL base da API). Sempre é um dos dois.
 | DELETE | `/api/v1/users/me/avatar` | sim | remove a foto e volta ao avatar padrão |
 | GET | `/api/v1/avatars/presets` | não | chaves dos avatares prontos |
 | GET | `/api/v1/avatars/{id}` | não | imagem de uma foto (WebP 256×256, cacheável) |
+| GET | `/api/v1/groups` | sim | meus grupos (nome, papel, tamanho) |
+| POST | `/api/v1/groups` | sim | cria um grupo (quem cria é o dono) e devolve a senha |
+| POST | `/api/v1/groups/lookup` | sim | confere a senha: nome, tamanho e perfis que dá para assumir |
+| POST | `/api/v1/groups/join` | sim | entra com a senha (`claimMemberId` opcional para assumir um perfil) |
+| GET | `/api/v1/groups/{id}` | sim | grupo, senha e membros (404 para quem não é membro) |
+| PATCH | `/api/v1/groups/{id}` | admin | renomeia e/ou liga/desliga a senha |
+| DELETE | `/api/v1/groups/{id}` | dono | exclui o grupo (confirmação `EXCLUIR`) |
+| POST | `/api/v1/groups/{id}/invite-code` | admin | gera outra senha (a antiga deixa de valer) |
+| POST | `/api/v1/groups/{id}/transfer-ownership` | dono | passa a propriedade a outro membro com conta |
+| DELETE | `/api/v1/groups/{id}/members/me` | membro | sai do grupo (o dono não pode) |
+| POST | `/api/v1/groups/{id}/members` | admin | cria um membro sem conta |
+| PATCH | `/api/v1/groups/{id}/members/{memberId}` | admin/dono | nome e avatar de um perfil sem conta (admin) ou papel (dono) |
+| DELETE | `/api/v1/groups/{id}/members/{memberId}` | admin/dono | remove um membro (admin: só membros comuns) |
+| PUT | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | foto de um perfil sem conta (`multipart/form-data`, campo `file`) |
+| DELETE | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | remove a foto de um perfil sem conta |
 | GET | `/health/live`, `/health/ready` | não | processo; processo + banco |
 
-*Grupos, partidas, tempo real, ranking e histórico entram nas próximas fases.*
+*Partidas, tempo real, ranking e histórico entram nas próximas fases.*
 
 ## Códigos de erro atuais
 
@@ -109,21 +164,41 @@ enviada; prefixe `url` com a URL base da API). Sempre é um dos dois.
 | `avatar.invalid_image` | 400 | o arquivo não é JPEG, PNG, WebP ou GIF válido (vazio, truncado, SVG, texto...) |
 | `avatar.dimensions_too_large` | 400 | imagem com lado acima de 8000 px ou mais de 25 megapixels |
 | `user.delete_not_confirmed` | 400 | exclusão de conta sem a confirmação `EXCLUIR` |
+| `group.name_invalid` | 400 | nome do grupo fora das regras (2 a 40 caracteres, sem invisíveis) |
+| `member.display_name_invalid` | 400 | nome do perfil sem conta fora das regras (2 a 30 caracteres) |
+| `group.invalid_role` | 400 | papel inválido (use `admin` ou `member`; para a propriedade, a transferência) |
+| `group.delete_not_confirmed` | 400 | exclusão de grupo sem a confirmação `EXCLUIR` |
 | `auth.unauthorized` | 401 | sem token, token inválido/expirado ou sessão encerrada |
 | `auth.invalid_refresh_token` | 401 | refresh token inválido, expirado ou já trocado |
 | `auth.forbidden` | 403 | sem permissão |
+| `group.forbidden` | 403 | é membro do grupo, mas o papel não permite a ação |
 | `auth.account_suspended` | 403 | conta suspensa |
 | `auth.registration_closed` | 403 | cadastros fechados |
 | `auth.user_not_found` | 404 | não existe conta com esse telefone (siga para o cadastro) |
 | `auth.session_not_found` | 404 | sessão inexistente ou de outra conta |
 | `avatar.not_found` | 404 | foto inexistente (ou já substituída) |
 | `user.not_found` | 404 | a conta do token não existe mais |
+| `group.not_found` | 404 | grupo inexistente, excluído ou do qual a pessoa não é membro |
+| `group.invalid_code` | 404 | senha do grupo inválida, desativada ou de grupo excluído |
+| `member.not_found` | 404 | o membro não está (ativo) neste grupo |
 | `auth.phone_taken` | 409 | já existe conta com esse telefone |
 | `auth.refresh_conflict` | 409 | duas renovações simultâneas; tente de novo |
+| `group.limit_reached` | 409 | a pessoa já está no máximo de grupos (20) |
+| `group.full` | 409 | o grupo já tem o máximo de membros (100) |
+| `group.already_member` | 409 | tentou assumir um perfil já sendo membro do grupo |
+| `group.claim_unavailable` | 409 | o perfil não existe, já foi assumido, foi removido, é de outro grupo ou a pessoa já esteve no grupo |
+| `group.owner_cannot_leave` | 409 | o dono não sai nem é removido: transfira a propriedade ou exclua o grupo |
+| `group.owner_role_fixed` | 409 | o papel do dono só muda transferindo a propriedade |
+| `group.transfer_invalid` | 409 | a propriedade só passa a outro membro com conta |
+| `member.has_account` | 409 | nome/avatar/foto só se mudam em perfis sem conta (quem tem conta usa o próprio perfil) |
+| `member.no_account` | 409 | perfil sem conta não pode ser administrador |
+| `group.concurrent_update` | 409 | duas pessoas mudaram o grupo ao mesmo tempo; tente de novo |
+| `user.owns_groups` | 409 | exclusão de conta de quem é dono de grupo com outras pessoas (`errors.groups` lista os nomes) |
 | `avatar.too_large` | 413 | foto acima de 3 MB |
 | `request.too_large` | 413 | o envio inteiro passa do limite (a foto + folga do multipart) |
 | `rate_limit.exceeded` | 429 | muitas requisições |
 | `server.error` | 500 | erro inesperado (informe o `traceId`) |
+| `group.code_generation_failed` | 503 | não foi possível gerar uma senha única agora; tente de novo |
 
 ## Contrato OpenAPI
 

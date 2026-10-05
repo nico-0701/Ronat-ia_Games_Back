@@ -36,4 +36,10 @@ public sealed class RateLimitingSettings
 
     /// <summary>Envios de foto por pessoa, por hora.</summary>
     public int UploadPerHour { get; set; } = 20;
+
+    /// <summary>Grupos criados por pessoa, por hora.</summary>
+    public int GroupCreatePerHour { get; set; } = 10;
+
+    /// <summary>Tentativas de entrar em grupo (ou conferir a senha) por pessoa, por minuto.</summary>
+    public int GroupJoinPerMinute { get; set; } = 10;
 }

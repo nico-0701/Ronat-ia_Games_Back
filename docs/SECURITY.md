@@ -22,6 +22,8 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 | **Quem souber o telefone de alguém entra na conta dessa pessoa** (o número não é verificado) | limitado a nome, avatar e grupos da conta; o acesso a um grupo ainda exige a *senha do grupo* | limite de requisições por IP; Turnstile (quando configurado); telefone nunca exposto; sessões listáveis e revogáveis ("sair de todos os aparelhos"); a evolução prevista é acrescentar verificação (WhatsApp/SMS) ou PIN atrás de configuração |
 | **Cadastro do número de outra pessoa** antes dela | a pessoa não consegue criar a própria conta | o administrador pode liberar o número depois de uma verificação humana (fora do sistema) |
 | **Enumeração de contas** (o login responde 404 para número desconhecido, para o app saber que deve mostrar o cadastro) | descobrir quais números têm conta | limite por IP, Turnstile, `Registration:Mode=closed` como válvula de escape |
+| **A senha do grupo é compartilhada**: qualquer membro pode repassá-la, e ela fica guardada em claro (todo membro precisa vê-la de novo) | entra no grupo quem tiver a senha: vê nomes, avatares e (nas próximas fases) o histórico do grupo | 30^8 combinações com limite de 10 tentativas/min por pessoa; dono/admin **desativam** ou **trocam** a senha (a antiga morre na hora) e removem quem não devia estar; erro idêntico para senha errada, desativada e de grupo excluído (ADR-0006) |
+| **Reivindicar um perfil sem conta não passa por aprovação**: quem tem a senha pode assumir o perfil de qualquer pessoa sem conta do grupo | alguém "vira" a vovó no placar | num grupo de amigos a confiança já está na senha; o dono remove a pessoa e recria o perfil; se virar problema, o modelo comporta uma aprovação do dono |
 | **Veredito autodeclarado nos jogos presenciais** (o servidor não vê a mímica) | pontuação "por honra" | o servidor garante autorização, ordem, tempo e contabilidade; ranking é por diversão |
 
 ## Controles implementados
@@ -33,6 +35,14 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - **Revogação imediata:** a cada requisição autenticada o servidor confere que a sessão não foi revogada e que a conta está ativa (cache de 10 s). Logout, "sair de todos os aparelhos" e suspensão valem na hora, sem esperar o JWT expirar.
 - **A identidade vem do token**, nunca de um telefone, id ou cabeçalho enviado pelo cliente. Todo controller exige login por padrão (`RequireAuthorization()`); o público precisa de `[AllowAnonymous]` explícito.
 - **Concorrência:** `version` na sessão (otimista) impede duas renovações simultâneas de gravarem as duas.
+
+### Grupos
+- **Autorização no servidor** (`GroupPermissions`): dono, administrador e membro (ADR-0006); o cliente só esconde botões. A identidade de quem age vem do token, e o papel é lido do banco a cada chamada.
+- **Quem não é membro recebe `404`, nunca `403`**, para todas as rotas de um grupo: não se descobre que um grupo existe. Há testes de "pessoa de fora" para cada operação.
+- **Senha do grupo:** 8 caracteres sorteados com `RandomNumberGenerator` (sem viés) de um alfabeto de 30 símbolos; limite de 10 entradas/conferências por minuto **por pessoa** (e o teto por IP); `group.invalid_code` idêntico para senha errada, desativada e de grupo excluído; entrada/conferência por `POST` (a senha não vai em URL nem em log de acesso).
+- **Invariantes no banco**, além do código: um dono ativo por grupo (índice único parcial), uma linha por pessoa e grupo, perfil sem conta consistente (nome + exatamente um avatar), dono sempre com conta, formato da senha. Testes tentam violar cada uma diretamente no SQL.
+- **Concorrência:** a reivindicação de um perfil usa um token de versão (a segunda de duas simultâneas recebe `409`); a transferência de propriedade roda numa transação (rebaixa, depois promove); a entrada é idempotente e um duplo clique não duplica o membro.
+- **Limites:** 20 grupos por pessoa, 100 membros por grupo, 10 grupos criados por hora; as fotos de perfis sem conta passam pelo mesmo processamento e limites das fotos de conta.
 
 ### Segredos e configuração
 - `Auth:PhonePepper` e `Jwt:SigningKey` são validados **na subida**: ausentes, curtos (< 32 bytes) ou iguais aos valores públicos de desenvolvimento fora de Development → a API **não inicia**.
@@ -62,7 +72,7 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 
 ### Logs e privacidade
 - Logs estruturados sem telefone, nome, senhas ou tokens; só ids e códigos. Corpo das requisições não é registrado.
-- Exclusão de conta (LGPD): anonimização; o hash do telefone é substituído por um valor aleatório.
+- Exclusão de conta (LGPD): anonimização; o hash do telefone é substituído por um valor aleatório. Os vínculos com grupos são encerrados (as linhas ficam, apontando para "Jogador removido", para o histórico continuar íntegro); quem é dono de grupo com outras pessoas precisa transferir antes.
 
 ### Cadeia de suprimentos
 - Dependabot (NuGet, Actions, Docker), auditoria do NuGet, `gitleaks` no CI, *secret scanning* e *push protection* do GitHub.
