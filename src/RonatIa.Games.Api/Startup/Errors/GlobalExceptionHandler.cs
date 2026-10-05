@@ -63,6 +63,7 @@ public sealed class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logge
                         ErrorKind.Forbidden => (StatusCodes.Status403Forbidden, "Acesso negado"),
                         ErrorKind.NotFound => (StatusCodes.Status404NotFound, "Não encontrado"),
                         ErrorKind.Conflict => (StatusCodes.Status409Conflict, "Conflito"),
+                        ErrorKind.PayloadTooLarge => (StatusCodes.Status413PayloadTooLarge, ProblemDetailsDefaults.TitleFor(StatusCodes.Status413PayloadTooLarge)),
                         ErrorKind.RateLimited => (StatusCodes.Status429TooManyRequests, "Muitas requisições"),
                         ErrorKind.Unavailable => (StatusCodes.Status503ServiceUnavailable, "Serviço indisponível"),
                         _ => (StatusCodes.Status500InternalServerError, "Erro interno"),

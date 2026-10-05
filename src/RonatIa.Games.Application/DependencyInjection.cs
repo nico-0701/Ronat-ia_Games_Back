@@ -14,6 +14,7 @@ public static class DependencyInjection
 
         services.AddScoped<AuthService>();
         services.AddScoped<UserService>();
+        services.AddScoped<AvatarService>();
 
         return services;
     }

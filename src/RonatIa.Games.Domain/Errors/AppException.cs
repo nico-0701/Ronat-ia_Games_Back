@@ -19,7 +19,7 @@ public class AppException : Exception
     /// <summary>Identificador estável do erro, no formato <c>area.motivo</c>.</summary>
     public string Code { get; }
 
-    /// <summary>Erros por campo (apenas para <see cref="ErrorKind.Validation"/>).</summary>
+    /// <summary>Erros por campo (para <see cref="ErrorKind.Validation"/> e <see cref="ErrorKind.PayloadTooLarge"/>).</summary>
     public IReadOnlyDictionary<string, string[]>? Errors { get; }
 
     public static AppException Validation(string code, string message, IReadOnlyDictionary<string, string[]>? errors = null) =>
@@ -32,6 +32,9 @@ public class AppException : Exception
     public static AppException NotFound(string code, string message) => new(ErrorKind.NotFound, code, message);
 
     public static AppException Conflict(string code, string message) => new(ErrorKind.Conflict, code, message);
+
+    public static AppException PayloadTooLarge(string code, string message, IReadOnlyDictionary<string, string[]>? errors = null) =>
+        new(ErrorKind.PayloadTooLarge, code, message, errors);
 
     public static AppException RateLimited(string code, string message) => new(ErrorKind.RateLimited, code, message);
 

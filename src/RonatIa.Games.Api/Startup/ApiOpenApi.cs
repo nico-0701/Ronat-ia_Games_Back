@@ -51,6 +51,12 @@ public static class ApiOpenApi
                     {
                         response.Content?.Remove("text/plain");
                         response.Content?.Remove("text/json");
+
+                        // Imagens são bytes crus, não texto em base64 (que é o que "byte" significa em OpenAPI).
+                        foreach (var content in response.Content?.Where(c => c.Key.StartsWith("image/", StringComparison.Ordinal)).Select(c => c.Value) ?? [])
+                        {
+                            content.Schema = new OpenApiSchema { Type = JsonSchemaType.String, Format = "binary" };
+                        }
                     }
 
                     operation.Responses["default"] = new OpenApiResponse

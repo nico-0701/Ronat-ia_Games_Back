@@ -12,6 +12,7 @@ public static class RateLimitPolicies
     public const string AuthLogin = "auth-login";
     public const string AuthRegister = "auth-register";
     public const string AuthRefresh = "auth-refresh";
+    public const string Upload = "upload";
 }
 
 public static class ApiRateLimiting
@@ -44,6 +45,9 @@ public static class ApiRateLimiting
 
             options.AddPolicy(RateLimitPolicies.AuthRefresh, context =>
                 PerIp(context, settings => settings.AuthRefreshPerMinute, TimeSpan.FromMinutes(1)));
+
+            options.AddPolicy(RateLimitPolicies.Upload, context =>
+                PerUser(context, settings => settings.UploadPerHour, TimeSpan.FromHours(1)));
         });
 
         return services;
@@ -56,6 +60,20 @@ public static class ApiRateLimiting
     {
         var settings = context.RequestServices.GetRequiredService<IOptions<RateLimitingSettings>>().Value;
         return RateLimitPartition.GetFixedWindowLimiter(ClientKey(context), _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = Math.Max(1, limit(settings)),
+            Window = window,
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        });
+    }
+
+    /// <summary>Limite por pessoa autenticada (cai para o IP se, por algum motivo, não houver usuário).</summary>
+    private static RateLimitPartition<string> PerUser(HttpContext context, Func<RateLimitingSettings, int> limit, TimeSpan window)
+    {
+        var settings = context.RequestServices.GetRequiredService<IOptions<RateLimitingSettings>>().Value;
+        var key = context.User.GetUserId()?.ToString() ?? ClientKey(context);
+        return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
         {
             PermitLimit = Math.Max(1, limit(settings)),
             Window = window,
