@@ -42,4 +42,10 @@ public sealed class RateLimitingSettings
 
     /// <summary>Tentativas de entrar em grupo (ou conferir a senha) por pessoa, por minuto.</summary>
     public int GroupJoinPerMinute { get; set; } = 10;
+
+    /// <summary>Partidas criadas por pessoa, por hora.</summary>
+    public int SessionCreatePerHour { get; set; } = 30;
+
+    /// <summary>Ações de jogo por pessoa, por minuto (jogos rápidos precisam de folga).</summary>
+    public int SessionActionPerMinute { get; set; } = 240;
 }

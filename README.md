@@ -31,9 +31,9 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | [`docs/adr`](docs/adr) | Registros de decisões de arquitetura (ADRs) |
 | `docs/ARCHITECTURE.md` | Visão geral da arquitetura *(em breve)* |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de dados, conexão, ambiente local e migrações |
-| [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, endpoints e códigos de erro |
+| [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, grupos, partidas, endpoints e códigos de erro |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
-| `docs/GAME_DEVELOPMENT.md` | Como criar um novo jogo *(em breve)* |
+| [`docs/GAME_DEVELOPMENT.md`](docs/GAME_DEVELOPMENT.md) | Como criar um novo jogo (o contrato dos módulos, regras de ouro e um exemplo) |
 | `docs/DEPLOY.md` | Render, Supabase, variáveis e limites dos planos gratuitos *(em breve)* |
 
 ## Como rodar
@@ -87,9 +87,11 @@ src/
   RonatIa.Games.Api/              controllers finos, SignalR, autenticação, pipeline HTTP
   RonatIa.Games.Application/      casos de uso
   RonatIa.Games.Domain/           entidades e regras da plataforma
+  RonatIa.Games.Abstractions/     contrato dos jogos (IGameModule): os módulos dependem só disto
   RonatIa.Games.Infrastructure/   EF Core/Npgsql, segurança, imagens
 tests/
   RonatIa.Games.Domain.Tests/     testes unitários das regras de domínio
+  RonatIa.Games.Abstractions.Tests/  contrato dos jogos e o exemplo de GAME_DEVELOPMENT.md
   RonatIa.Games.Infrastructure.Tests/  telefone, JWT, refresh token, Turnstile
   RonatIa.Games.Api.Tests/        testes de integração (API em memória + PostgreSQL real)
 scripts/                          banco local (dev-db.ps1)

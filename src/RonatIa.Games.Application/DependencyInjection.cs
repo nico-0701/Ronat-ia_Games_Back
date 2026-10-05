@@ -1,7 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using RonatIa.Games.Abstractions;
 using RonatIa.Games.Application.Auth;
+using RonatIa.Games.Application.Games;
 using RonatIa.Games.Application.Groups;
+using RonatIa.Games.Application.Sessions;
 using RonatIa.Games.Application.Users;
 
 namespace RonatIa.Games.Application;
@@ -20,6 +23,13 @@ public static class DependencyInjection
         services.AddScoped<GroupAccess>();
         services.AddScoped<GroupService>();
         services.AddScoped<GroupMemberService>();
+
+        // Jogos: os módulos se registram como IGameModule; o catálogo e o sorteio são da plataforma.
+        services.TryAddSingleton<IGameRandom, SystemGameRandom>();
+        services.AddSingleton<IGameCatalog, GameCatalog>();
+        services.AddScoped<SessionReader>();
+        services.AddScoped<SessionLobbyService>();
+        services.AddScoped<SessionPlayService>();
 
         return services;
     }

@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using RonatIa.Games.Domain.Groups;
+using RonatIa.Games.Domain.Sessions;
 using RonatIa.Games.Domain.Users;
 
 namespace RonatIa.Games.Application.Abstractions;
@@ -21,7 +23,20 @@ public interface IAppDbContext
 
     DbSet<GroupMember> GroupMembers { get; }
 
+    DbSet<GameSession> GameSessions { get; }
+
+    DbSet<SessionPlayer> SessionPlayers { get; }
+
+    DbSet<GameEventRecord> GameEvents { get; }
+
+    DbSet<ScoreEntry> ScoreEntries { get; }
+
+    DbSet<SessionResult> SessionResults { get; }
+
     DatabaseFacade Database { get; }
+
+    /// <summary>Permite descartar o estado rastreado depois de uma gravação que falhou, antes de tentar de novo.</summary>
+    ChangeTracker ChangeTracker { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

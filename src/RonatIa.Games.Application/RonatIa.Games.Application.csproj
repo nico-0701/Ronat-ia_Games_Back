@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RonatIa.Games.Domain\RonatIa.Games.Domain.csproj" />
+    <ProjectReference Include="..\RonatIa.Games.Abstractions\RonatIa.Games.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

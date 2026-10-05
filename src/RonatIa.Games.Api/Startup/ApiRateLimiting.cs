@@ -15,6 +15,8 @@ public static class RateLimitPolicies
     public const string Upload = "upload";
     public const string GroupCreate = "group-create";
     public const string GroupJoin = "group-join";
+    public const string SessionCreate = "session-create";
+    public const string SessionAction = "session-action";
 }
 
 public static class ApiRateLimiting
@@ -57,6 +59,12 @@ public static class ApiRateLimiting
             // Entrar e conferir a senha compartilham a cota: é a barreira contra adivinhar senhas de grupo.
             options.AddPolicy(RateLimitPolicies.GroupJoin, context =>
                 PerUser(context, settings => settings.GroupJoinPerMinute, TimeSpan.FromMinutes(1)));
+
+            options.AddPolicy(RateLimitPolicies.SessionCreate, context =>
+                PerUser(context, settings => settings.SessionCreatePerHour, TimeSpan.FromHours(1)));
+
+            options.AddPolicy(RateLimitPolicies.SessionAction, context =>
+                PerUser(context, settings => settings.SessionActionPerMinute, TimeSpan.FromMinutes(1)));
         });
 
         return services;

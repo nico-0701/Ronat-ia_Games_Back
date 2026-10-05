@@ -1,0 +1,5 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- O contrato dos jogos: minúsculo e sem dependências. Os módulos de jogo referenciam SÓ este projeto. -->
+
+</Project>

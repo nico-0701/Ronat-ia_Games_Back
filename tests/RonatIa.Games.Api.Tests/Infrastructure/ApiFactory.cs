@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Time.Testing;
+using RonatIa.Games.Abstractions;
 using RonatIa.Games.Infrastructure.Persistence;
 
 namespace RonatIa.Games.Api.Tests.Infrastructure;
@@ -34,7 +35,13 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Cors:AllowedOriginPatterns:0", @"^https://[a-z0-9-]+\.exemplo\.pages\.dev$");
 
         builder.ConfigureServices(services =>
-            services.AddControllers().AddApplicationPart(typeof(TestErrorsController).Assembly));
+        {
+            services.AddControllers().AddApplicationPart(typeof(TestErrorsController).Assembly);
+
+            // Jogos de teste: o motor é exercitado sem depender de um jogo real.
+            services.AddSingleton<IGameModule, RelayGame>();
+            services.AddSingleton<IGameModule, SoloGame>();
+        });
     }
 
     /// <summary>Host derivado (mesmo banco e mesmos segredos) com relógio controlável, para testes de expiração.</summary>

@@ -39,6 +39,7 @@ public static class ApiServiceCollectionExtensions
         services.AddApiAuthentication();
         services.AddApiRateLimiting();
         services.AddApiOpenApi();
+        services.AddGameModules();
 
         // "ready" só fica verde se o banco responde; "live" não depende de nada externo.
         services.AddHealthChecks().AddDbContextCheck<AppDbContext>("database", tags: ["ready"]);

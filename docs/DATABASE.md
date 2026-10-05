@@ -90,7 +90,38 @@ Quem participa de um grupo: **pessoa com conta** (`user_id` preenchido; nome e a
 - `ux_group_members_group_user`: **único** em `(group_id, user_id)` onde `user_id IS NOT NULL`, uma linha por pessoa e grupo (perfis sem conta podem se repetir).
 - `ix_group_members_user_active` (`user_id` onde ativo) para "meus grupos"; `ix_group_members_group_id` para listar os membros.
 
-> As demais tabelas (partidas, eventos, pontuação, resultados) entram junto com cada funcionalidade, uma migração por PR.
+### Partidas (ADR-0007)
+
+O estado do jogo é um `jsonb` opaco para a plataforma (só o módulo do jogo o entende). Quando a partida some (o grupo é apagado de verdade), tudo o que depende dela vai junto (`ON DELETE CASCADE`); as linhas de membros nunca são apagadas, então o histórico continua apontando para eles.
+
+**`app.game_sessions`**
+
+| Coluna | Tipo | Regras |
+|---|---|---|
+| `id` | uuid | PK |
+| `group_id` | uuid | FK `groups.id` (cascade) |
+| `game_id` | varchar(40) | slug do jogo (`mimica`); o catálogo vive no código |
+| `rules_version` | int | versão das regras do jogo quando a partida foi criada |
+| `host_member_id` | uuid | FK `group_members.id` (restrict): o anfitrião |
+| `status` | varchar(20) | `waiting`, `in_progress`, `finished`, `cancelled` (`ck_game_sessions_status`) |
+| `config` | jsonb | configuração validada e normalizada pelo jogo |
+| `state`, `state_schema_version` | jsonb, int | nulos até começar; **juntos** (`ck_game_sessions_state_pair`) e obrigatórios em `in_progress`/`finished` (`ck_game_sessions_state_present`) |
+| `version` | int | token de concorrência: sobe a cada mudança (duas ações simultâneas não gravam as duas) |
+| `last_event_seq` | int | último número de sequência de evento usado |
+| `rematch_of_id` | uuid, nulo | FK para a própria tabela (`SET NULL`): a partida original de uma revanche |
+| `created_at`, `started_at`, `finished_at`, `cancelled_at`, `updated_at` | timestamptz | |
+
+Índices: `(group_id, created_at desc)` e parcial `(group_id)` onde `status IN ('waiting','in_progress')` (partidas abertas).
+
+**`app.game_session_players`**: quem joga. Sempre um **membro do grupo** (`member_id` → `group_members.id`, restrict). `team_no` (0 a 15, nulo sem time), `seat` (ordem de entrada, nunca reaproveitada), `status` (`joined`/`left`/`removed`; `left_at` preenchido se e somente se não for `joined`). **UNIQUE `(session_id, member_id)`**: sair e voltar reativa a mesma linha.
+
+**`app.game_events`**: trilha. `id bigint identity`, `session_id`, `seq` (≥ 1), `type`, `actor_player_id`, `client_action_id`, `payload` jsonb (só fatos públicos), `created_at`. **UNIQUE `(session_id, seq)`** (sequência contínua e sem repetição) e **UNIQUE parcial `(session_id, client_action_id)`** onde não nulo: é isto que torna uma ação **idempotente**.
+
+**`app.score_entries`**: livro-razão da pontuação (só o servidor escreve). `id bigint identity`, `session_id`, `player_id` e/ou `team_no` (**ao menos um**: `ck_score_entries_target`), `points`, `reason`, `event_seq` (o evento que gerou os pontos). O total de cada jogador e time é a soma das entradas.
+
+**`app.session_results`**: classificação final de cada jogador numa partida encerrada, base dos rankings. PK `(session_id, player_id)`; `member_id`, `group_id` e `game_id` desnormalizados para ranking rápido; `team_no`, `rank` (≥ 1), `score`, `is_winner`, `finished_at`. Índice `(group_id, game_id, member_id)`.
+
+> As demais tabelas entram junto com cada funcionalidade. Retenção da trilha (`game_events` antigos) e encerramento automático de partidas abandonadas ainda não existem.
 
 ## Conexão
 

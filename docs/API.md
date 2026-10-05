@@ -113,6 +113,33 @@ sequenceDiagram
 - **Excluir a conta:** quem é dono de grupo com outras pessoas precisa transferir a propriedade antes (`409 user.owns_groups`, com os nomes em `errors.groups`); os grupos em que é a única pessoa com conta são excluídos junto.
 - **Identificadores:** `member.id` identifica a pessoa **dentro do grupo** (é o que o histórico de partidas usa); não é o id da conta.
 
+## Jogos e partidas
+
+Uma **partida** (`session`) é uma rodada de um jogo dentro de um grupo. O servidor é a **fonte da verdade**: o cliente envia *ações*, nunca pontuação, e só enxerga o que o jogo projeta para ele (ADR-0007; para criar um jogo, [`GAME_DEVELOPMENT.md`](GAME_DEVELOPMENT.md)).
+
+```mermaid
+stateDiagram-v2
+    [*] --> waiting: POST /sessions
+    waiting --> inProgress: start (confere jogadores e times)
+    inProgress --> finished: fim do jogo ou /finish
+    waiting --> cancelled: cancel
+    inProgress --> cancelled: cancel
+    finished --> [*]
+    cancelled --> [*]
+```
+
+- **Catálogo:** `GET /games` lista os jogos instalados com limites (`minPlayers`, `maxPlayers`), `teamCount` (0 = cada um por si) e `configDefaults` (a configuração padrão, para montar a tela de opções).
+- **Lobby (`waiting`):** quem cria vira o **anfitrião** e já entra como jogador. Qualquer membro do grupo com conta entra por conta própria (`/join`, `/leave`); o anfitrião adiciona membros do grupo (inclusive **perfis sem conta**, para quem não tem celular), remove jogadores, define os times (`PUT /teams` ou o sorteio equilibrado `POST /teams/shuffle`) e ajusta a configuração (`PATCH /config`, que o jogo valida e normaliza). **Anfitrião e administradores do grupo gerenciam** (`canManage`). Os jogadores da partida são sempre **membros do grupo**: o `member.id` identifica a pessoa no histórico.
+- **Começar:** `POST /start` confere o número de jogadores e, em jogos com times, que todos estejam alocados e cada time completo (`session.not_enough_players`, `session.teams_incomplete`...).
+- **A visão da partida:** `GET /sessions/{id}` devolve o lobby, os placares (`players[].score`, `teamScores`) e a `view`, um JSON **próprio do jogo e só do que quem consultou pode ver** (a carta do mímico não aparece para os outros, nem na trilha de eventos). `allowedActions` diz o que esta pessoa pode enviar agora e `deadlineAt` o prazo da fase; o cliente não deduz isso. Membros do grupo que não jogam assistem com a visão pública (`myPlayerId` nulo).
+- **Agir:** `POST /sessions/{id}/actions` com `{ clientActionId, type, payload }`. O jogo valida (quem pode, em que fase, dentro do prazo) e o servidor calcula os pontos. **`clientActionId` (UUID gerado pelo cliente) torna o envio idempotente:** reenviar o mesmo (rede ruim, duas abas) devolve o estado atual com `replayed: true`, sem reaplicar. Recusas do jogo: `400` (ação malformada), `403` (não é a sua vez ou papel) ou `409` (outra fase, prazo vencido), cada uma com o `code` do jogo (`jogo.motivo`).
+- **Sincronização:** `version` sobe a cada mudança; o cliente compara para saber se há novidade e, ao reconectar, busca `GET /sessions/{id}` (o tempo real por SignalR, que só *avisa* que há novidade, vem na próxima fase).
+- **Concorrência:** se várias pessoas agem ao mesmo tempo, o servidor as serializa; a que perde é reavaliada sobre o estado novo (pode virar uma recusa legítima do jogo, ex.: "o turno já passou"). Só persistindo o conflito, `409 session.concurrent_update` (o lobby também: tente de novo).
+- **Trilha:** `GET /sessions/{id}/events?after=<seq>&limit=` devolve os eventos em ordem, com sequência contínua e **só fatos públicos** (o conteúdo das ações nunca é gravado).
+- **Fim:** o jogo encerra sozinho (`status: finished`, `standings` com posição, pontos e vencedores) ou o anfitrião encerra antes (`POST /finish`, vale o placar do momento). `POST /cancel` abandona sem resultado. **Revanche:** `POST /rematch` cria uma partida nova no lobby com o mesmo jogo, configuração e jogadores (e times) da que terminou ou foi cancelada.
+- **Limites:** 5 partidas abertas por grupo; 30 partidas criadas por hora e 240 ações por minuto por pessoa.
+- **Quem não é membro do grupo recebe `404 session.not_found`**, nunca 403.
+
 ## Endpoints atuais
 
 | Método | Rota | Auth | Descrição |
@@ -147,9 +174,25 @@ sequenceDiagram
 | DELETE | `/api/v1/groups/{id}/members/{memberId}` | admin/dono | remove um membro (admin: só membros comuns) |
 | PUT | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | foto de um perfil sem conta (`multipart/form-data`, campo `file`) |
 | DELETE | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | remove a foto de um perfil sem conta |
+| GET | `/api/v1/games`, `/api/v1/games/{gameId}` | sim | catálogo de jogos instalados (limites, times, configuração padrão) |
+| POST | `/api/v1/sessions` | membro | cria uma partida no lobby (`{ groupId, gameId, config? }`); quem cria é o anfitrião |
+| GET | `/api/v1/groups/{groupId}/sessions` | membro | partidas do grupo (as abertas primeiro) |
+| GET | `/api/v1/sessions/{id}` | membro | a partida como quem consulta a enxerga (lobby, placares, `view` do jogo, `allowedActions`) |
+| POST | `/api/v1/sessions/{id}/join`, `/leave` | membro | entra/sai do lobby (idempotente) |
+| POST | `/api/v1/sessions/{id}/players` | gerente | adiciona um membro do grupo (inclusive perfil sem conta) |
+| DELETE | `/api/v1/sessions/{id}/players/{playerId}` | gerente | remove um jogador do lobby |
+| PUT | `/api/v1/sessions/{id}/teams` | gerente | define o time de cada jogador informado |
+| POST | `/api/v1/sessions/{id}/teams/shuffle` | gerente | sorteia times equilibrados |
+| PATCH | `/api/v1/sessions/{id}/config` | gerente | altera a configuração (só no lobby) |
+| POST | `/api/v1/sessions/{id}/start` | gerente | começa a partida |
+| POST | `/api/v1/sessions/{id}/actions` | jogador | envia uma ação (`{ clientActionId, type, payload? }`); idempotente |
+| GET | `/api/v1/sessions/{id}/events` | membro | trilha de eventos públicos (`after`, `limit`) |
+| POST | `/api/v1/sessions/{id}/finish` | gerente | encerra antes do fim (vale o placar do momento) |
+| POST | `/api/v1/sessions/{id}/cancel` | gerente | cancela (no lobby ou em andamento) |
+| POST | `/api/v1/sessions/{id}/rematch` | gerente | nova partida no lobby com o mesmo jogo, configuração e jogadores |
 | GET | `/health/live`, `/health/ready` | não | processo; processo + banco |
 
-*Partidas, tempo real, ranking e histórico entram nas próximas fases.*
+*Tempo real (SignalR), ranking e histórico entram nas próximas fases. "Gerente" = anfitrião da partida ou administrador do grupo.*
 
 ## Códigos de erro atuais
 
@@ -164,6 +207,10 @@ sequenceDiagram
 | `avatar.invalid_image` | 400 | o arquivo não é JPEG, PNG, WebP ou GIF válido (vazio, truncado, SVG, texto...) |
 | `avatar.dimensions_too_large` | 400 | imagem com lado acima de 8000 px ou mais de 25 megapixels |
 | `user.delete_not_confirmed` | 400 | exclusão de conta sem a confirmação `EXCLUIR` |
+| `session.invalid_config` | 400 | a configuração não passou na validação do jogo (veja `errors` por campo) |
+| `session.invalid_team` | 400 | time fora da faixa do jogo ou jogador repetido na lista |
+| `action.invalid_payload` | 400 | os dados da ação não batem com o formato esperado pelo jogo |
+| *`jogo.motivo`* | 400 | outras recusas de ação malformada, definidas por cada jogo (ex.: `relay.text_required`) |
 | `group.name_invalid` | 400 | nome do grupo fora das regras (2 a 40 caracteres, sem invisíveis) |
 | `member.display_name_invalid` | 400 | nome do perfil sem conta fora das regras (2 a 30 caracteres) |
 | `group.invalid_role` | 400 | papel inválido (use `admin` ou `member`; para a propriedade, a transferência) |
@@ -172,6 +219,9 @@ sequenceDiagram
 | `auth.invalid_refresh_token` | 401 | refresh token inválido, expirado ou já trocado |
 | `auth.forbidden` | 403 | sem permissão |
 | `group.forbidden` | 403 | é membro do grupo, mas o papel não permite a ação |
+| `session.forbidden` | 403 | só o anfitrião da partida ou um administrador do grupo pode fazer isso |
+| `session.not_a_player` | 403 | quem não joga nem gerencia a partida tentou agir |
+| *`jogo.motivo`* | 403 | ação recusada pelo jogo: não é a sua vez ou o seu papel (ex.: `relay.not_performer`) |
 | `auth.account_suspended` | 403 | conta suspensa |
 | `auth.registration_closed` | 403 | cadastros fechados |
 | `auth.user_not_found` | 404 | não existe conta com esse telefone (siga para o cadastro) |
@@ -181,6 +231,9 @@ sequenceDiagram
 | `group.not_found` | 404 | grupo inexistente, excluído ou do qual a pessoa não é membro |
 | `group.invalid_code` | 404 | senha do grupo inválida, desativada ou de grupo excluído |
 | `member.not_found` | 404 | o membro não está (ativo) neste grupo |
+| `game.not_found` | 404 | o jogo não está instalado |
+| `session.not_found` | 404 | partida inexistente ou de um grupo do qual a pessoa não é membro |
+| `session.player_not_found` | 404 | o jogador não está nesta partida |
 | `auth.phone_taken` | 409 | já existe conta com esse telefone |
 | `auth.refresh_conflict` | 409 | duas renovações simultâneas; tente de novo |
 | `group.limit_reached` | 409 | a pessoa já está no máximo de grupos (20) |
@@ -194,6 +247,17 @@ sequenceDiagram
 | `member.no_account` | 409 | perfil sem conta não pode ser administrador |
 | `group.concurrent_update` | 409 | duas pessoas mudaram o grupo ao mesmo tempo; tente de novo |
 | `user.owns_groups` | 409 | exclusão de conta de quem é dono de grupo com outras pessoas (`errors.groups` lista os nomes) |
+| `session.limit_reached` | 409 | o grupo já tem o máximo de partidas abertas (5) |
+| `session.not_waiting` | 409 | a operação só vale no lobby e a partida já começou ou terminou |
+| `session.not_in_progress` | 409 | a operação (ação, encerrar) exige a partida em andamento |
+| `session.already_ended` | 409 | tentou cancelar uma partida que já terminou |
+| `session.not_ended` | 409 | revanche antes de a partida terminar ou ser cancelada |
+| `session.full` | 409 | a partida já tem o máximo de jogadores do jogo |
+| `session.not_enough_players` / `session.too_many_players` | 409 | número de jogadores fora dos limites do jogo ao começar |
+| `session.teams_incomplete` | 409 | jogo com times: há jogador sem time ou time com menos que o mínimo |
+| `session.no_teams` | 409 | operação de times num jogo que não tem times |
+| `session.concurrent_update` | 409 | a partida mudou ao mesmo tempo por outra ação e o conflito persistiu; tente de novo |
+| *`jogo.motivo`* | 409 | ação recusada pelo jogo por fase ou prazo (ex.: `relay.turn_expired`) |
 | `avatar.too_large` | 413 | foto acima de 3 MB |
 | `request.too_large` | 413 | o envio inteiro passa do limite (a foto + folga do multipart) |
 | `rate_limit.exceeded` | 429 | muitas requisições |

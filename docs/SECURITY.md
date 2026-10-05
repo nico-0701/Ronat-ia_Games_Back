@@ -44,6 +44,15 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 - **Concorrência:** a reivindicação de um perfil usa um token de versão (a segunda de duas simultâneas recebe `409`); a transferência de propriedade roda numa transação (rebaixa, depois promove); a entrada é idempotente e um duplo clique não duplica o membro.
 - **Limites:** 20 grupos por pessoa, 100 membros por grupo, 10 grupos criados por hora; as fotos de perfis sem conta passam pelo mesmo processamento e limites das fotos de conta.
 
+### Partidas e jogos
+- **O servidor é a fonte da verdade** (ADR-0007): o cliente envia *ações*, nunca pontuação; cada ação é validada pelo módulo do jogo (quem pode, em que fase, dentro do prazo) e os pontos são calculados no servidor.
+- **Segredo só pela projeção:** o estado do jogo (a carta, o papel de cada um) nunca é devolvido; cada pessoa recebe só o que o módulo projeta para ela, e quem só assiste recebe a visão pública. A trilha de eventos guarda **fatos públicos** (o conteúdo das ações, que pode ser um palpite secreto, não é gravado). Testes de vazamento conferem que a palavra secreta não aparece na partida, na trilha nem na listagem para quem não pode vê-la.
+- **Acesso:** só membros ativos do grupo; quem não é membro recebe `404`, nunca `403`. Gerenciar (lobby, começar, cancelar, encerrar, revanche) é do anfitrião ou de administradores do grupo; agir exige ser jogador ou gerente.
+- **Concorrência e idempotência garantidas pelo banco:** `version` como token otimista, `UNIQUE (session_id, seq)` e `UNIQUE (session_id, client_action_id)`; uma ação é uma única transação (estado + eventos + pontos + resultado). Testes disparam ações simultâneas (incluindo o mesmo `clientActionId` duas vezes) e conferem que nada é perdido nem duplicado.
+- **Tempo:** prazos são dados avaliados pelo servidor com o relógio dele; o cliente não consegue "estender" um turno.
+- **Limites contra abuso:** 5 partidas abertas por grupo, 30 criações/hora e 240 ações/minuto por pessoa; a leitura da trilha é paginada.
+- **Módulos de jogo são código confiável** (revisado como o resto do repositório), mas isolados por construção: dependem só de `Abstractions` (sem banco, rede nem relógio) e os erros que lançam viram respostas 4xx com código estável, sem vazar pilha.
+
 ### Segredos e configuração
 - `Auth:PhonePepper` e `Jwt:SigningKey` são validados **na subida**: ausentes, curtos (< 32 bytes) ou iguais aos valores públicos de desenvolvimento fora de Development → a API **não inicia**.
 - `appsettings.json` não traz segredos; segredos reais vêm de variáveis de ambiente (Render) ou `dotnet user-secrets` (desenvolvimento).
