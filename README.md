@@ -2,7 +2,7 @@
 
 API e motor de jogos da plataforma **Ronat-ia Games** (nome provisório): jogos multiplayer para amigos, começando pela **Mímica**. A mesma conta e o mesmo backend atendem a **Web** e o **Android**.
 
-> **Estado:** em construção. Acompanhe as [issues](../../issues) e os [pull requests](../../pulls).
+> **Estado:** o backend está completo para o primeiro jogo: contas por telefone, grupos com senha compartilhada e membros sem conta, motor de partidas, a **Mímica**, tempo real (SignalR), ranking e histórico, e a documentação de publicação. Falta o Front, o importador dos dados da família e os próximos jogos. Veja [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 > Front (Web + Android): [`Ronat-ia_Games_Front`](https://github.com/nico-0701/Ronat-ia_Games_Front).
 
 ## O que a plataforma faz
@@ -29,14 +29,14 @@ Decisões de arquitetura: [`docs/adr`](docs/adr).
 | Documento | Conteúdo |
 |---|---|
 | [`docs/adr`](docs/adr) | Registros de decisões de arquitetura (ADRs) |
-| `docs/ARCHITECTURE.md` | Visão geral da arquitetura *(em breve)* |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Visão geral da arquitetura: componentes, projetos, fluxos, dados, testes e limitações |
 | [`docs/DATABASE.md`](docs/DATABASE.md) | Modelo de dados, conexão, ambiente local e migrações |
 | [`docs/API.md`](docs/API.md) | Convenções, fluxo de entrada, grupos, partidas, endpoints e códigos de erro |
 | [`docs/SECURITY.md`](docs/SECURITY.md) | Modelo de ameaças, riscos aceitos e controles |
 | [`docs/GAME_DEVELOPMENT.md`](docs/GAME_DEVELOPMENT.md) | Como criar um novo jogo (o contrato dos módulos, regras de ouro e um exemplo) |
 | [`docs/games/MIMICA.md`](docs/games/MIMICA.md) | O jogo Mímica: regras, configuração, ações, fases, a visão por jogador e o conteúdo |
 | [`docs/REALTIME.md`](docs/REALTIME.md) | Tempo real (SignalR): conexão, métodos, mensagens, receita para o cliente e segurança |
-| `docs/DEPLOY.md` | Render, Supabase, variáveis e limites dos planos gratuitos *(em breve)* |
+| [`docs/DEPLOY.md`](docs/DEPLOY.md) | Publicação no Render e no Supabase, variáveis, operação e limites dos planos gratuitos |
 
 ## Como rodar
 

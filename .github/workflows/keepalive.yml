@@ -1,0 +1,25 @@
+name: Keep-alive
+
+# Acorda a API (Render gratuito dorme após 15 min sem tráfego) e usa o banco (Supabase gratuito pausa após 7 dias sem
+# atividade) nos horários de uso: a cada 10 min, das 08h às 23h59 de Brasília (UTC-3; o cron do GitHub é em UTC).
+# Só roda se a variável de repositório API_URL estiver definida (Settings > Secrets and variables > Actions > Variables),
+# ex.: https://ronat-games-api.onrender.com
+# Atenção: o GitHub desativa workflows agendados de repositórios sem atividade por 60 dias; um commit reativa.
+on:
+  schedule:
+    - cron: '*/10 11-23,0-2 * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  ping:
+    name: ping
+    if: ${{ vars.API_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Chamar /health/ready (acorda a API e toca o banco)
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 20 --retry-all-errors --max-time 90 "${API_URL%/}/health/ready"

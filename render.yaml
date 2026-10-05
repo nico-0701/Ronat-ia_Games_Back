@@ -1,0 +1,35 @@
+# Blueprint do Render: https://render.com/docs/blueprint-spec
+# Como usar: no painel do Render, New > Blueprint > escolha este repositório. Os valores marcados com `sync: false`
+# são pedidos na criação (nada secreto fica neste arquivo). Passo a passo e variáveis: docs/DEPLOY.md.
+services:
+  - type: web
+    name: ronat-games-api
+    runtime: docker
+    region: oregon            # mesma região do Supabase (us-west-2); o Render não tem região no Brasil
+    plan: free                # dorme após 15 min sem tráfego e leva ~1 min para acordar (ver docs/DEPLOY.md)
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health/live    # só o processo: não depende do banco, então um Supabase dormindo não reinicia a API
+    autoDeployTrigger: checksPass    # publica quando o CI da main passa
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      # --- obrigatórias (segredos) ---
+      - key: ConnectionStrings__Default      # string do POOLER do Supabase, modo session (porta 5432)
+        sync: false
+      - key: Auth__PhonePepper               # openssl rand -base64 48; NUNCA troque depois de haver usuários
+        sync: false
+      - key: Jwt__SigningKey                 # openssl rand -base64 64
+        sync: false
+      # --- CORS: o endereço do front (Cloudflare Pages) ---
+      - key: Cors__AllowedOrigins__0
+        sync: false
+      # --- opcionais ---
+      - key: Registration__Mode              # Open | Closed (válvula de escape contra abuso)
+        value: Open
+      - key: Turnstile__SecretKey            # vazio = anti-bot desligado
+        sync: false
+      - key: Turnstile__SiteKey
+        sync: false
+      - key: Client__MinClientVersion        # abaixo disto o app pede atualização
+        value: 0.0.0
