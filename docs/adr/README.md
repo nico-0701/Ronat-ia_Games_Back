@@ -32,3 +32,4 @@ O que melhora, o que piora, riscos aceitos e como mitigar.
 | [0006](0006-grupos-senha-compartilhada-e-perfis-sem-conta.md) | Grupos: senha compartilhada, perfis sem conta e reivindicação | Aceito |
 | [0007](0007-motor-de-partidas-modulos-puros.md) | Motor de partidas: módulos de jogo puros, estado opaco, versão e idempotência | Aceito |
 | [0008](0008-tempo-real-signalr-avisa-e-entrega-a-visao.md) | Tempo real: o hub avisa e entrega a visão; comandos pelo REST | Aceito |
+| [0009](0009-ranking-dos-resultados-e-limpeza-automatica.md) | Ranking calculado dos resultados e limpeza automática | Aceito |

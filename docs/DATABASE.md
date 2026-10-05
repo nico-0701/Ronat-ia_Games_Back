@@ -121,7 +121,7 @@ O estado do jogo é um `jsonb` opaco para a plataforma (só o módulo do jogo o 
 
 **`app.session_results`**: classificação final de cada jogador numa partida encerrada, base dos rankings. PK `(session_id, player_id)`; `member_id`, `group_id` e `game_id` desnormalizados para ranking rápido; `team_no`, `rank` (≥ 1), `score`, `is_winner`, `finished_at`. Índice `(group_id, game_id, member_id)`.
 
-> As demais tabelas entram junto com cada funcionalidade. Retenção da trilha (`game_events` antigos) e encerramento automático de partidas abandonadas ainda não existem.
+> **Retenção e limpeza** (ADR-0009): um serviço em segundo plano cancela lobbies sem mudança há 12 h e partidas sem ação há 24 h, apaga `game_events` de partidas encerradas há mais de 60 dias (ficam `score_entries` e `session_results`) e sessões de login expiradas ou encerradas há mais de 30 dias. O ranking é calculado na hora de `session_results`.
 
 ## Conexão
 

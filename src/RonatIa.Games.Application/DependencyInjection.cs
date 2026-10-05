@@ -4,6 +4,8 @@ using RonatIa.Games.Abstractions;
 using RonatIa.Games.Application.Auth;
 using RonatIa.Games.Application.Games;
 using RonatIa.Games.Application.Groups;
+using RonatIa.Games.Application.Maintenance;
+using RonatIa.Games.Application.Ranking;
 using RonatIa.Games.Application.Sessions;
 using RonatIa.Games.Application.Users;
 
@@ -30,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<SessionReader>();
         services.AddScoped<SessionLobbyService>();
         services.AddScoped<SessionPlayService>();
+        services.AddScoped<RankingService>();
+        services.AddScoped<MaintenanceService>();
 
         return services;
     }

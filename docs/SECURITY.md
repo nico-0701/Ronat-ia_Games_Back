@@ -88,6 +88,7 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 
 ### Logs e privacidade
 - Logs estruturados sem telefone, nome, senhas ou tokens; só ids e códigos. Corpo das requisições não é registrado.
+- Retenção: a trilha de eventos de partidas encerradas é apagada após 60 dias e sessões de login expiradas ou encerradas, após 30 (limpeza automática, ADR-0009); o resultado e o placar das partidas ficam.
 - Exclusão de conta (LGPD): anonimização; o hash do telefone é substituído por um valor aleatório. Os vínculos com grupos são encerrados (as linhas ficam, apontando para "Jogador removido", para o histórico continuar íntegro); quem é dono de grupo com outras pessoas precisa transferir antes.
 
 ### Cadeia de suprimentos

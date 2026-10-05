@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.SignalR;
+using RonatIa.Games.Api.Maintenance;
 using RonatIa.Games.Api.Realtime;
 using RonatIa.Games.Api.Startup.Errors;
 using RonatIa.Games.Infrastructure.Persistence;
@@ -47,6 +48,7 @@ public static class ApiServiceCollectionExtensions
         services.AddSingleton<SessionSubscriptions>();
         services.AddSingleton<SessionBroadcastQueue>();
         services.AddHostedService<SessionBroadcaster>();
+        services.AddHostedService<MaintenanceWorker>();
         services.AddSignalR(options =>
             {
                 options.KeepAliveInterval = TimeSpan.FromSeconds(15);      // o proxy do Render derruba conexões ociosas

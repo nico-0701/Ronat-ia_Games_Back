@@ -1276,6 +1276,169 @@
         }
       }
     },
+    "/api/v1/groups/{groupId}/ranking": {
+      "get": {
+        "tags": [
+          "Ranking"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "schema": {
+              "default": "all",
+              "$ref": "#/components/schemas/RankingPeriod"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RankingDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro. O corpo é um ProblemDetails com `code` (estável), `detail`, `traceId` e, em validações, `errors` por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/groups/{groupId}/history": {
+      "get": {
+        "tags": [
+          "Ranking"
+        ],
+        "parameters": [
+          {
+            "name": "groupId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "gameId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "before",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HistoryPageDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro. O corpo é um ProblemDetails com `code` (estável), `detail`, `traceId` e, em validações, `errors` por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/users/me/stats": {
+      "get": {
+        "tags": [
+          "Ranking"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MyStatsDto"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "Erro. O corpo é um ProblemDetails com `code` (estável), `detail`, `traceId` e, em validações, `errors` por campo.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblem"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Bearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/sessions": {
       "post": {
         "tags": [
@@ -2957,6 +3120,32 @@
           }
         }
       },
+      "GameStatsDto": {
+        "required": [
+          "gameId",
+          "played",
+          "wins",
+          "score"
+        ],
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": "string"
+          },
+          "played": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
       "GroupDetailDto": {
         "required": [
           "id",
@@ -3066,6 +3255,106 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "HistoryEntryDto": {
+        "required": [
+          "sessionId",
+          "gameId",
+          "startedAt",
+          "finishedAt",
+          "standings"
+        ],
+        "type": "object",
+        "properties": {
+          "sessionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "gameId": {
+            "type": "string"
+          },
+          "startedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "finishedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "standings": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryStandingDto"
+            }
+          }
+        }
+      },
+      "HistoryPageDto": {
+        "required": [
+          "items",
+          "nextBefore"
+        ],
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/HistoryEntryDto"
+            }
+          },
+          "nextBefore": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "HistoryStandingDto": {
+        "required": [
+          "memberId",
+          "displayName",
+          "avatar",
+          "team",
+          "rank",
+          "score",
+          "isWinner"
+        ],
+        "type": "object",
+        "properties": {
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/AvatarDto"
+          },
+          "team": {
+            "type": [
+              "null",
+              "integer"
+            ],
+            "format": "int32"
+          },
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "isWinner": {
+            "type": "boolean"
           }
         }
       },
@@ -3196,6 +3485,130 @@
             "$ref": "#/components/schemas/AuthMeta"
           }
         }
+      },
+      "MyStatsDto": {
+        "required": [
+          "played",
+          "wins",
+          "groups",
+          "byGame"
+        ],
+        "type": "object",
+        "properties": {
+          "played": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "groups": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "byGame": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GameStatsDto"
+            }
+          }
+        }
+      },
+      "RankingDto": {
+        "required": [
+          "gameId",
+          "period",
+          "since",
+          "entries"
+        ],
+        "type": "object",
+        "properties": {
+          "gameId": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "period": {
+            "$ref": "#/components/schemas/RankingPeriod"
+          },
+          "since": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "entries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RankingEntryDto"
+            }
+          }
+        }
+      },
+      "RankingEntryDto": {
+        "required": [
+          "rank",
+          "memberId",
+          "displayName",
+          "avatar",
+          "hasAccount",
+          "isMe",
+          "played",
+          "wins",
+          "winRate",
+          "score"
+        ],
+        "type": "object",
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "memberId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "avatar": {
+            "$ref": "#/components/schemas/AvatarDto"
+          },
+          "hasAccount": {
+            "type": "boolean"
+          },
+          "isMe": {
+            "type": "boolean"
+          },
+          "played": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "wins": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "winRate": {
+            "type": "number",
+            "format": "double"
+          },
+          "score": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "RankingPeriod": {
+        "enum": [
+          "all",
+          "year",
+          "quarter",
+          "month",
+          "week"
+        ]
       },
       "RefreshRequest": {
         "required": [
@@ -3596,6 +4009,9 @@
     },
     {
       "name": "Meta"
+    },
+    {
+      "name": "Ranking"
     },
     {
       "name": "Sessions"

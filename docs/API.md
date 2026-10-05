@@ -140,6 +140,18 @@ stateDiagram-v2
 - **Limites:** 5 partidas abertas por grupo; 30 partidas criadas por hora e 240 ações por minuto por pessoa.
 - **Quem não é membro do grupo recebe `404 session.not_found`**, nunca 403.
 
+## Ranking, histórico e estatísticas
+
+Calculados das partidas **encerradas** (partidas abertas e canceladas não contam). O histórico pertence ao **membro** do grupo, com ou sem conta: quem assume um perfil sem conta herda tudo o que ele já jogou, e quem saiu do grupo continua aparecendo com o que ganhou. Só membros do grupo consultam (senão, `404 group.not_found`).
+
+- **Ranking:** `GET /groups/{id}/ranking?gameId=&period=` devolve, por membro, partidas (`played`), vitórias (`wins`), aproveitamento (`winRate`, de 0 a 1) e pontos (`score`; nos jogos de times, os do time). Ordem: vitórias, depois aproveitamento, depois partidas; quem empata em tudo divide a posição (`rank` 1, 1, 3...). Num empate de partida, **todos vencem** (como no app original). `gameId` filtra por jogo; `period` é `all` (padrão), `year`, `quarter` (90 dias), `month` (30) ou `week` (7).
+- **Histórico:** `GET /groups/{id}/history?gameId=&limit=&before=` lista as partidas encerradas, da mais recente para a mais antiga, cada uma com a classificação (posição, pontos, quem venceu). Paginação por cursor: a resposta traz `nextBefore`; passe-o em `before` para a página seguinte. `limit` vai de 1 a 50 (padrão 20).
+- **Estatísticas pessoais:** `GET /users/me/stats` soma todos os grupos de que a pessoa participa (partidas, vitórias, grupos e o detalhe por jogo).
+
+## Limpeza automática
+
+A API roda uma limpeza a cada hora (enquanto está acordada; `Maintenance:*`): **lobbies sem nenhuma mudança por 12 h** e **partidas em andamento sem nenhuma ação por 24 h** são canceladas (senão ocupariam para sempre uma das 5 partidas abertas do grupo); a **trilha de eventos** de partidas encerradas há mais de 60 dias é apagada (ficam o placar, o livro-razão e o resultado, que alimentam o ranking); sessões de login expiradas ou encerradas há mais de 30 dias são apagadas.
+
 ## Endpoints atuais
 
 | Método | Rota | Auth | Descrição |
@@ -175,6 +187,9 @@ stateDiagram-v2
 | PUT | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | foto de um perfil sem conta (`multipart/form-data`, campo `file`) |
 | DELETE | `/api/v1/groups/{id}/members/{memberId}/avatar` | admin | remove a foto de um perfil sem conta |
 | GET | `/api/v1/games`, `/api/v1/games/{gameId}` | sim | catálogo de jogos instalados (limites, times, configuração padrão) |
+| GET | `/api/v1/groups/{id}/ranking` | membro | ranking do grupo (`gameId`, `period`) |
+| GET | `/api/v1/groups/{id}/history` | membro | partidas encerradas com a classificação (`gameId`, `limit`, `before`) |
+| GET | `/api/v1/users/me/stats` | sim | estatísticas pessoais somando todos os grupos |
 | POST | `/api/v1/sessions` | membro | cria uma partida no lobby (`{ groupId, gameId, config? }`); quem cria é o anfitrião |
 | GET | `/api/v1/groups/{groupId}/sessions` | membro | partidas do grupo (as abertas primeiro) |
 | GET | `/api/v1/sessions/{id}` | membro | a partida como quem consulta a enxerga (lobby, placares, `view` do jogo, `allowedActions`) |
@@ -192,7 +207,7 @@ stateDiagram-v2
 | POST | `/api/v1/sessions/{id}/rematch` | gerente | nova partida no lobby com o mesmo jogo, configuração e jogadores |
 | GET | `/health/live`, `/health/ready` | não | processo; processo + banco |
 
-*O tempo real (SignalR) está em [`REALTIME.md`](REALTIME.md). Ranking e histórico entram na próxima fase. "Gerente" = anfitrião da partida ou administrador do grupo.*
+*O tempo real (SignalR) está em [`REALTIME.md`](REALTIME.md). "Gerente" = anfitrião da partida ou administrador do grupo.*
 
 ## Códigos de erro atuais
 

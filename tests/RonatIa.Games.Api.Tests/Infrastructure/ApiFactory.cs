@@ -30,6 +30,7 @@ public sealed class ApiFactory : WebApplicationFactory<Program>
         builder.UseSetting("Auth:PhonePepper", PhonePepper);
         builder.UseSetting("Jwt:SigningKey", JwtSigningKey);
         builder.UseSetting("RateLimiting:Enabled", "false");
+        builder.UseSetting("Maintenance:Enabled", "false"); // a limpeza é testada chamando o serviço; o serviço em segundo plano ficaria interferindo nos outros testes
         builder.UseSetting("Docs:Enabled", "true");
         builder.UseSetting("Cors:AllowedOrigins:0", "https://app.exemplo.test");
         builder.UseSetting("Cors:AllowedOriginPatterns:0", @"^https://[a-z0-9-]+\.exemplo\.pages\.dev$");

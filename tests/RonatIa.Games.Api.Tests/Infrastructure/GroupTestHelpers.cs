@@ -112,6 +112,13 @@ public static class GroupTestHelpers
         return await owner.GetGroupAsync(group.Id);
     }
 
+    /// <summary>Entra de novo com o telefone (um token novo): necessário depois de avançar muito o relógio de teste.</summary>
+    public static async Task<Person> ReloginAsync(this Person person, WebApplicationFactory<Program> factory)
+    {
+        var auth = await factory.CreateClient().LoginAsync(person.Phone!);
+        return new Person { Auth = auth, Client = factory.ClientFor(auth.AccessToken), Phone = person.Phone };
+    }
+
     public static MemberDto MemberOf(this GroupDetailDto group, Person person) =>
         group.Members.Single(member => member.HasAccount && member.DisplayName == person.Name);
 

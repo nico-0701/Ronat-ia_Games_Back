@@ -35,6 +35,7 @@ public static class DependencyInjection
         services.AddOptions<AvatarOptions>().Bind(configuration.GetSection(AvatarOptions.SectionName));
         services.AddOptions<GroupOptions>().Bind(configuration.GetSection(GroupOptions.SectionName));
         services.AddOptions<SessionOptions>().Bind(configuration.GetSection(SessionOptions.SectionName));
+        services.AddOptions<MaintenanceOptions>().Bind(configuration.GetSection(MaintenanceOptions.SectionName));
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
 
