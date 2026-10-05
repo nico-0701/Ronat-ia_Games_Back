@@ -25,6 +25,9 @@
     <PackageReference Include="Microsoft.IdentityModel.Tokens" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="SkiaSharp" />
+    <!-- Biblioteca nativa do SkiaSharp para Linux (CI e Docker/Render), sem depender de fontconfig. Windows e macOS já vêm no pacote principal. -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
   </ItemGroup>
 
 </Project>

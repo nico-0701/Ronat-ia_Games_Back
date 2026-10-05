@@ -7,7 +7,7 @@ API e motor de jogos da plataforma **Ronat-ia Games** (nome provisório): jogos 
 
 ## O que a plataforma faz
 
-- **Conta por telefone:** o número de telefone é o identificador único (sem SMS, sem senha). Cada pessoa tem nome e avatar (presets ou foto própria).
+- **Conta por telefone:** o número de telefone é o identificador único (sem SMS, sem senha). Cada pessoa tem nome e avatar (um pronto, à escolha, ou uma foto própria, que o servidor recorta, reduz e limpa de metadados).
 - **Grupos de amigos:** quem cria o grupo recebe uma **senha do grupo**, que é compartilhada com quem for entrar. Grupos também podem ter membros **sem conta** (perfis com nome e foto, geridos pelo dono e "reivindicáveis" depois).
 - **Partidas multiplayer:** lobby → times → rodadas → pontuação → resultado → ranking, em tempo real (SignalR). O servidor é a **fonte da verdade** das regras e do placar.
 - **Jogos como módulos:** cada jogo é um módulo independente (Mímica primeiro; "adivinhar o ano" e "Out of the Loop" depois). Adicionar um jogo não exige mexer em contas, grupos ou partidas.

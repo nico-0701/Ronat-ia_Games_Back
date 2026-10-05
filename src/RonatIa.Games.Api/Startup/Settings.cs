@@ -33,4 +33,7 @@ public sealed class RateLimitingSettings
     public int AuthRegisterPerHour { get; set; } = 10;
 
     public int AuthRefreshPerMinute { get; set; } = 60;
+
+    /// <summary>Envios de foto por pessoa, por hora.</summary>
+    public int UploadPerHour { get; set; } = 20;
 }

@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using RonatIa.Games.Application.Abstractions;
 using RonatIa.Games.Application.Options;
+using RonatIa.Games.Infrastructure.Images;
 using RonatIa.Games.Infrastructure.Persistence;
 using RonatIa.Games.Infrastructure.Security;
 
@@ -31,12 +32,14 @@ public static class DependencyInjection
         services.AddOptions<JwtOptions>().Bind(configuration.GetSection(JwtOptions.SectionName)).ValidateOnStart();
         services.AddOptions<RegistrationOptions>().Bind(configuration.GetSection(RegistrationOptions.SectionName));
         services.AddOptions<TurnstileOptions>().Bind(configuration.GetSection(TurnstileOptions.SectionName));
+        services.AddOptions<AvatarOptions>().Bind(configuration.GetSection(AvatarOptions.SectionName));
         services.AddSingleton<IValidateOptions<AuthOptions>, AuthOptionsValidator>();
         services.AddSingleton<IValidateOptions<JwtOptions>, JwtOptionsValidator>();
 
         services.AddSingleton<IPhoneNormalizer, LibPhoneNumberNormalizer>();
         services.AddSingleton<IPhoneHasher, HmacPhoneHasher>();
         services.AddSingleton<ITokenService, JwtTokenService>();
+        services.AddSingleton<IAvatarImageProcessor, SkiaAvatarProcessor>();
 
         services.AddMemoryCache();
         services.AddScoped<ISessionValidator, SessionValidator>();

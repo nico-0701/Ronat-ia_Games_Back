@@ -14,7 +14,7 @@ REST + JSON em `/api/v1`, com tempo real por SignalR (em breve). O contrato comp
 | **Limite de taxa** | `429` com `Retry-After` e `code: rate_limit.exceeded`. |
 | **Rastreio** | toda resposta traz `X-Trace-Id`. |
 | **CORS** | só origens configuradas (lista explícita). Para SignalR, o cliente deve usar `withCredentials: false` ou a origem precisa estar na lista. |
-| **Cache** | respostas da API não são armazenadas (`no-store`); avatares serão imutáveis e cacheáveis. |
+| **Cache** | respostas da API não são armazenadas (`no-store`); a imagem de uma foto de avatar é pública, imutável e cacheável por um ano (`ETag`, `immutable`). |
 
 Exemplo de erro:
 
@@ -60,6 +60,19 @@ sequenceDiagram
 - **Captcha:** quando `GET /api/v1/meta` informa `auth.captchaRequired: true`, mostre o widget do Cloudflare Turnstile (chave pública em `auth.captchaSiteKey`) e envie o token em `captchaToken` no login e no cadastro.
 - **Cadastro fechado:** se `auth.registrationOpen` for `false`, o cadastro responde `403 auth.registration_closed`; quem já tem conta continua entrando.
 
+## Perfil e avatar
+
+Todo `user` devolvido pela API traz `avatar`: `{ "kind": "preset", "preset": "preset-3", "url": null }` (avatar pronto; as imagens
+prontas vivem no Front, com o nome da chave) ou `{ "kind": "photo", "preset": null, "url": "/api/v1/avatars/<id>" }` (foto
+enviada; prefixe `url` com a URL base da API). Sempre é um dos dois.
+
+- **Avatares prontos:** `GET /avatars/presets` (público, usado na tela de cadastro) lista as chaves e o padrão.
+- **Escolher um pronto ou mudar o nome:** `PATCH /users/me` com `{ displayName?, avatarPreset? }`; só o que for enviado muda. Escolher um pronto descarta a foto.
+- **Enviar foto:** `PUT /users/me/avatar`, `multipart/form-data`, campo `file`. Aceita JPEG, PNG, WebP e GIF de até **3 MB**. O servidor **recorta em quadrado pelo centro, reduz para 256×256, reencoda em WebP e descarta todos os metadados** (inclusive a localização do GPS); a rotação do EXIF é respeitada. O original nunca é guardado. Limite: 20 envios por hora por pessoa. Enviar de novo substitui (e apaga) a foto anterior.
+- **Remover a foto:** `DELETE /users/me/avatar` volta ao avatar padrão (idempotente).
+- **Ver a foto:** `GET /avatars/{id}` é público (é um `<img>` simples, sem token), não adivinhável e imutável: `Cache-Control: public, max-age=31536000, immutable`, com `ETag` (responde `304` a `If-None-Match`).
+- **Excluir a conta:** `DELETE /users/me` com `{ "confirmation": "EXCLUIR" }` (LGPD). Anonimiza os dados, apaga a foto, encerra todas as sessões e **libera o telefone** para um novo cadastro. Não dá para desfazer.
+
 ## Endpoints atuais
 
 | Método | Rota | Auth | Descrição |
@@ -73,9 +86,15 @@ sequenceDiagram
 | GET | `/api/v1/auth/sessions` | sim | aparelhos conectados (marca o atual) |
 | DELETE | `/api/v1/auth/sessions/{id}` | sim | desconecta um aparelho |
 | GET | `/api/v1/users/me` | sim | perfil da própria pessoa |
+| PATCH | `/api/v1/users/me` | sim | muda o nome e/ou escolhe um avatar pronto |
+| DELETE | `/api/v1/users/me` | sim | exclui a conta (exige a confirmação `EXCLUIR`) |
+| PUT | `/api/v1/users/me/avatar` | sim | envia a foto do avatar (`multipart/form-data`, campo `file`) |
+| DELETE | `/api/v1/users/me/avatar` | sim | remove a foto e volta ao avatar padrão |
+| GET | `/api/v1/avatars/presets` | não | chaves dos avatares prontos |
+| GET | `/api/v1/avatars/{id}` | não | imagem de uma foto (WebP 256×256, cacheável) |
 | GET | `/health/live`, `/health/ready` | não | processo; processo + banco |
 
-*Grupos, avatares (presets e foto), partidas, tempo real, ranking e histórico entram nas próximas fases.*
+*Grupos, partidas, tempo real, ranking e histórico entram nas próximas fases.*
 
 ## Códigos de erro atuais
 
@@ -87,6 +106,9 @@ sequenceDiagram
 | `auth.captcha_failed` | 400 | captcha ausente, inválido ou expirado (quando exigido) |
 | `user.display_name_invalid` | 400 | nome fora das regras (2 a 30 caracteres, sem invisíveis) |
 | `avatar.unknown_preset` | 400 | avatar pronto inexistente |
+| `avatar.invalid_image` | 400 | o arquivo não é JPEG, PNG, WebP ou GIF válido (vazio, truncado, SVG, texto...) |
+| `avatar.dimensions_too_large` | 400 | imagem com lado acima de 8000 px ou mais de 25 megapixels |
+| `user.delete_not_confirmed` | 400 | exclusão de conta sem a confirmação `EXCLUIR` |
 | `auth.unauthorized` | 401 | sem token, token inválido/expirado ou sessão encerrada |
 | `auth.invalid_refresh_token` | 401 | refresh token inválido, expirado ou já trocado |
 | `auth.forbidden` | 403 | sem permissão |
@@ -94,8 +116,12 @@ sequenceDiagram
 | `auth.registration_closed` | 403 | cadastros fechados |
 | `auth.user_not_found` | 404 | não existe conta com esse telefone (siga para o cadastro) |
 | `auth.session_not_found` | 404 | sessão inexistente ou de outra conta |
+| `avatar.not_found` | 404 | foto inexistente (ou já substituída) |
+| `user.not_found` | 404 | a conta do token não existe mais |
 | `auth.phone_taken` | 409 | já existe conta com esse telefone |
 | `auth.refresh_conflict` | 409 | duas renovações simultâneas; tente de novo |
+| `avatar.too_large` | 413 | foto acima de 3 MB |
+| `request.too_large` | 413 | o envio inteiro passa do limite (a foto + folga do multipart) |
 | `rate_limit.exceeded` | 429 | muitas requisições |
 | `server.error` | 500 | erro inesperado (informe o `traceId`) |
 

@@ -43,10 +43,11 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 ### Entrada de dados
 - Validação nos DTOs (DataAnnotations) e regras de domínio (nomes: Unicode NFC, espaços colapsados, sem caracteres de controle ou invisíveis).
 - Telefone normalizado para E.164 (libphonenumber); só celulares e fixos válidos.
+- **Fotos de avatar** (ADR-0005): o arquivo enviado nunca é guardado nem repassado. O tipo é decidido pelo **conteúdo** (não pelo nome nem pelo `Content-Type`) e só JPEG, PNG, WebP e GIF passam; SVG, HTML e demais formatos são recusados. O servidor lê o cabeçalho **antes** de decodificar (lado máximo 8000 px, 25 megapixels, contra imagens "bomba"), decodifica, orienta, recorta, reduz e **reencoda** em WebP: tudo que estava escondido no original (EXIF/GPS, XMP, perfis, *polyglots*) é descartado. Limites: 3 MB por foto (`413` antes de ler o corpo quando o `Content-Length` já excede), 2 decodificações simultâneas (a hospedagem gratuita tem pouca memória) e 20 envios/hora por pessoa. A imagem é servida com `nosniff`, `Content-Security-Policy: default-src 'none'; sandbox` e tipo fixo `image/webp`.
 - Erros nunca vazam exceções: `ProblemDetails` com `code` estável e `traceId`; 500 genérico para o inesperado.
 
 ### Abuso
-- Limite global por IP (600/min) e políticas próprias: login (30/min), cadastro (10/h), renovação (60/min). IP real via `X-Forwarded-For` (o app só é alcançável pelo proxy da hospedagem).
+- Limite global por IP (600/min) e políticas próprias: login (30/min), cadastro (10/h), renovação (60/min) e envio de foto (20/h **por pessoa**). IP real via `X-Forwarded-For` (o app só é alcançável pelo proxy da hospedagem).
 - **Cloudflare Turnstile** em login e cadastro, ligado quando `Turnstile:SecretKey` está definida; **falha fechada** se o Cloudflare não responder.
 - **Válvula de escape:** `Registration:Mode=closed` bloqueia novos cadastros sem afetar quem já tem conta.
 
@@ -65,7 +66,8 @@ Resumo do modelo de ameaças, dos **riscos aceitos** (de propósito) e dos contr
 
 ### Cadeia de suprimentos
 - Dependabot (NuGet, Actions, Docker), auditoria do NuGet, `gitleaks` no CI, *secret scanning* e *push protection* do GitHub.
-- Evitar pacotes com licença comercial (MediatR, AutoMapper, FluentAssertions 8+). `SixLabors.ImageSharp` (fotos de avatar) tem licença própria: gratuito para projetos de código aberto e pequenos negócios; conferir antes de uso comercial.
+- Evitar pacotes com licença comercial (MediatR, AutoMapper, FluentAssertions 8+, ImageSharp 4+, que exige chave de licença até para compilar). As fotos de avatar usam **SkiaSharp** (MIT).
+- O SkiaSharp traz decodificadores nativos (libjpeg-turbo, libpng, libwebp, giflib): é superfície de ataque conhecida. Mitigações: validação do cabeçalho e limites antes de decodificar, nada do original é repassado, e o Dependabot mantém o pacote (e seus binários nativos) atualizado: **atualizações de segurança do SkiaSharp devem ser aplicadas sem demora**.
 
 ## Como reportar uma vulnerabilidade
 

@@ -8,6 +8,7 @@ public enum ErrorKind
     Forbidden,
     NotFound,
     Conflict,
+    PayloadTooLarge,
     RateLimited,
     Unavailable,
 }
