@@ -66,6 +66,7 @@ Toda migração termina ligando o RLS nas tabelas novas (há um teste que falha 
    - `Auth__PhonePepper`: `openssl rand -base64 48`. **Guarde uma cópia no gerenciador de senhas e nunca troque**: o telefone só existe como HMAC com este segredo, então trocá-lo invalida todos os logins e cadastros.
    - `Jwt__SigningKey`: `openssl rand -base64 64`.
    - `Cors__AllowedOrigins__0`: o endereço do front (ex.: `https://ronat-games.pages.dev`). Previews do Pages: `Cors__AllowedOriginPatterns__0` (regex).
+   - `Cors__AllowedOrigins__1`: `https://localhost`, a origem do **app Android** (Capacitor) em produção.
 3. Aguarde o build e confira:
    ```bash
    curl https://<servico>.onrender.com/health/live     # 200: o processo responde
@@ -84,7 +85,7 @@ O workflow [`keepalive.yml`](../.github/workflows/keepalive.yml) chama `/health/
 
 ### 5. Front
 
-O Front (repositório `Ronat-ia_Games_Front`) precisa de `VITE_API_URL` (endereço da API), `VITE_TURNSTILE_SITE_KEY` (se usar anti-bot) e gera seus tipos do contrato `docs/openapi/v1.json`. A origem do front deve estar em `Cors__AllowedOrigins__*`; o SignalR deve usar `withCredentials: false`.
+O Front (repositório `Ronat-ia_Games_Front`) precisa só de `VITE_API_URL` (endereço da API); a chave pública do Turnstile ele lê de `GET /api/v1/meta`. Os tipos dele vêm do contrato `docs/openapi/v1.json` (`npm run api:sync`). A origem do front (e `https://localhost`, do app Android) deve estar em `Cors__AllowedOrigins__*`. Passo a passo da publicação do site (Cloudflare Pages) e do APK: `docs/DEPLOY.md` e `docs/ANDROID.md` do Front.
 
 ## Variáveis de ambiente
 
@@ -139,7 +140,7 @@ Memória: a API usa SkiaSharp para tratar fotos; 2 decodificações simultâneas
 - [ ] Migrações aplicadas; `GET /health/ready` verde.
 - [ ] `Auth__PhonePepper` guardado também no gerenciador de senhas.
 - [ ] Credenciais de desenvolvimento (que passaram por conversas) trocadas; `Jwt__SigningKey` próprio de produção.
-- [ ] `Cors__AllowedOrigins__*` com o endereço real do front.
+- [ ] `Cors__AllowedOrigins__*` com o endereço real do front (e `https://localhost`, se for distribuir o app Android).
 - [ ] Turnstile configurado (ou conscientemente desligado) e `Registration__Mode` decidido.
 - [ ] `API_URL` definida para o *keep-alive*.
 - [ ] Rotina de `pg_dump` em local privado.

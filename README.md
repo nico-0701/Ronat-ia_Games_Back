@@ -2,7 +2,7 @@
 
 API e motor de jogos da plataforma **Ronat-ia Games** (nome provisório): jogos multiplayer para amigos, começando pela **Mímica**. A mesma conta e o mesmo backend atendem a **Web** e o **Android**.
 
-> **Estado:** o backend está completo para o primeiro jogo: contas por telefone, grupos com senha compartilhada e membros sem conta, motor de partidas, a **Mímica**, tempo real (SignalR), ranking e histórico, e a documentação de publicação. Falta o Front, o importador dos dados da família e os próximos jogos. Veja [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+> **Estado:** o backend está completo para o primeiro jogo: contas por telefone, grupos com senha compartilhada e membros sem conta, motor de partidas, a **Mímica**, tempo real (SignalR), ranking e histórico, e a documentação de publicação. O Front (Web e Android) já existe e usa este backend. Falta publicar, o importador dos dados da família e os próximos jogos. Veja [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 > Front (Web + Android): [`Ronat-ia_Games_Front`](https://github.com/nico-0701/Ronat-ia_Games_Front).
 
 ## O que a plataforma faz

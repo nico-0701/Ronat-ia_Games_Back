@@ -144,7 +144,7 @@ CI (`build-test`): formatação, build Release com avisos como erro, todos os te
 - **Plano gratuito:** a API dorme após 15 min sem tráfego, e o Render não recomenda o plano gratuito para produção ([DEPLOY.md](DEPLOY.md)).
 - **Login sem verificação:** quem souber o telefone de alguém entra na conta dessa pessoa (risco aceito, [ADR-0003](adr/0003-login-so-por-telefone.md)); a evolução prevista é verificação opcional atrás de configuração.
 - **Estado de jogo em JSON opaco:** não se consulta bem por SQL; análises usam eventos e resultados.
-- **Ainda não existem:** o Front, o importador privado dos dados da família, o segundo jogo ("adivinhar o ano") e o terceiro (Out of the Loop).
+- **Ainda não existem:** o importador privado dos dados da família, o segundo jogo ("adivinhar o ano") e o terceiro (Out of the Loop). O Front (Web e Android) está no repositório `Ronat-ia_Games_Front`.
 
 ## Decisões (ADRs)
 
