@@ -22,6 +22,25 @@ public sealed class ErrorHandlingTests(ApiFactory factory) : IClassFixture<ApiFa
         Assert.False(string.IsNullOrWhiteSpace(problem.GetProperty("traceId").GetString()));
     }
 
+    [Fact]
+    public async Task Errors_generated_by_the_framework_follow_the_same_shape_as_the_ones_from_the_app()
+    {
+        var notFound = await factory.CreateClient().GetAsync("/rota/que/nao/existe");
+        var unauthorized = await factory.CreateClient().GetAsync("/api/v1/users/me");
+
+        foreach (var (response, code) in new[] { (notFound, "http.not_found"), (unauthorized, "auth.unauthorized") })
+        {
+            var problem = await response.Content.ReadFromJsonAsync<JsonElement>();
+
+            Assert.Equal($"urn:ronat-ia:error:{code}", problem.GetProperty("type").GetString());
+            Assert.Equal(code, problem.GetProperty("code").GetString());
+            Assert.False(string.IsNullOrWhiteSpace(problem.GetProperty("detail").GetString()), "todo erro traz um detail em português");
+        }
+
+        Assert.Equal(HttpStatusCode.NotFound, notFound.StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, unauthorized.StatusCode);
+    }
+
     [Theory]
     [InlineData("/test/errors/not-found", HttpStatusCode.NotFound, "test.not_found")]
     [InlineData("/test/errors/conflict", HttpStatusCode.Conflict, "test.conflict")]

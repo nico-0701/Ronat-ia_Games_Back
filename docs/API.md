@@ -10,7 +10,7 @@ REST + JSON em `/api/v1`, com tempo real por SignalR (em breve). O contrato comp
 | **Versão** | prefixo `/api/v1`. Mudanças que quebram o contrato exigem `/api/v2`; campos novos são sempre opcionais (APKs antigos continuam em uso). `GET /api/v1/meta` informa `minClientVersion`: abaixo dela o app pede atualização. |
 | **JSON** | `camelCase`; datas ISO-8601 em UTC; enums como texto `camelCase`; números estritos (`5` e não `"5"`). |
 | **Autenticação** | `Authorization: Bearer <accessToken>`. Sem cookies. |
-| **Erros** | `application/problem+json` (RFC 9457) com `code` **estável** (use-o para decidir o que fazer), `detail` em português para exibir, `traceId` para suporte e, em validações, `errors` por campo. Esquema `ApiProblem`. |
+| **Erros** | `application/problem+json` (RFC 9457) com `code` **estável** (use-o para decidir o que fazer), `type` (`urn:ronat-ia:error:{code}`), `detail` em português para exibir, `traceId` para suporte e, em validações, `errors` por campo. Esquema `ApiProblem`. Vale para **todo** erro, inclusive os que o framework gera (rota inexistente, método errado, token ausente). |
 | **Limite de taxa** | `429` com `Retry-After` e `code: rate_limit.exceeded`. |
 | **Rastreio** | toda resposta traz `X-Trace-Id`. |
 | **CORS** | só origens configuradas (lista explícita). Para SignalR, o cliente deve usar `withCredentials: false` ou a origem precisa estar na lista. |
@@ -215,6 +215,7 @@ A API roda uma limpeza a cada hora (enquanto está acordada; `Maintenance:*`): *
 | Código | Status | Quando |
 |---|---|---|
 | `validation.failed` | 400 | corpo ou campos inválidos (veja `errors`) |
+| `http.bad_request` | 400 | requisição que o servidor não conseguiu entender |
 | `auth.invalid_phone` | 400 | telefone inválido |
 | `auth.terms_not_accepted` | 400 | cadastro sem aceitar os termos |
 | `auth.captcha_failed` | 400 | captcha ausente, inválido ou expirado (quando exigido) |
@@ -250,6 +251,8 @@ A API roda uma limpeza a cada hora (enquanto está acordada; `Maintenance:*`): *
 | `game.not_found` | 404 | o jogo não está instalado |
 | `session.not_found` | 404 | partida inexistente ou de um grupo do qual a pessoa não é membro |
 | `session.player_not_found` | 404 | o jogador não está nesta partida |
+| `http.not_found` | 404 | rota inexistente |
+| `http.method_not_allowed` | 405 | método HTTP não aceito nesta rota |
 | `auth.phone_taken` | 409 | já existe conta com esse telefone |
 | `auth.refresh_conflict` | 409 | duas renovações simultâneas; tente de novo |
 | `group.limit_reached` | 409 | a pessoa já está no máximo de grupos (20) |
@@ -276,6 +279,7 @@ A API roda uma limpeza a cada hora (enquanto está acordada; `Maintenance:*`): *
 | *`jogo.motivo`* | 409 | ação recusada pelo jogo por fase ou prazo (ex.: `relay.turn_expired`) |
 | `avatar.too_large` | 413 | foto acima de 3 MB |
 | `request.too_large` | 413 | o envio inteiro passa do limite (a foto + folga do multipart) |
+| `http.unsupported_media_type` | 415 | tipo de conteúdo não aceito (a API só fala JSON; a foto vai como `multipart/form-data`) |
 | `rate_limit.exceeded` | 429 | muitas requisições |
 | `server.error` | 500 | erro inesperado (informe o `traceId`) |
 | `group.code_generation_failed` | 503 | não foi possível gerar uma senha única agora; tente de novo |
