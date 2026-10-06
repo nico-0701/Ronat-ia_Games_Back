@@ -381,8 +381,7 @@ public sealed class RealtimeTests(ApiFactory factory) : IClassFixture<ApiFactory
     public async Task A_real_websocket_connection_authenticates_with_the_query_token_and_receives_updates()
     {
         await using var real = factory.WithSettings();
-        real.UseKestrel();
-        real.StartServer();
+        real.StartRealServer();
         var ana = await real.NewPersonAsync("Ana");
         var beto = await real.NewPersonAsync("Beto");
         var group = await ana.GroupWithAsync(beto);

@@ -29,8 +29,7 @@ public sealed class HardeningTests(ApiFactory factory) : IClassFixture<ApiFactor
     public async Task A_json_body_over_one_megabyte_is_refused_and_the_server_header_is_hidden()
     {
         await using var real = factory.WithSettings();
-        real.UseKestrel();
-        real.StartServer();
+        real.StartRealServer();
         var ana = await real.NewPersonAsync("Ana");
         var huge = new string('x', 2 * 1024 * 1024);
 
@@ -51,8 +50,7 @@ public sealed class HardeningTests(ApiFactory factory) : IClassFixture<ApiFactor
     public async Task Photo_uploads_keep_working_above_the_global_limit_because_they_raise_it_for_themselves()
     {
         await using var real = factory.WithSettings();
-        real.UseKestrel();
-        real.StartServer();
+        real.StartRealServer();
         var ana = await real.NewPersonAsync("Ana");
         var png = NoisePng(700);
         Assert.InRange(png.Length, 1_200_000, 3_000_000); // maior que o limite global de 1 MB, menor que o limite da foto

@@ -208,8 +208,7 @@ public sealed class AvatarUploadTests(ApiFactory factory) : IClassFixture<ApiFac
         // Sem Content-Length o filtro não consegue recusar de antemão; quem interrompe a leitura é o servidor. O TestServer
         // em memória não aplica o limite do corpo, por isso este teste sobe um Kestrel de verdade.
         await using var real = factory.WithSettings();
-        real.UseKestrel();
-        real.StartServer();
+        real.StartRealServer();
         var auth = await real.CreateClient().RegisterAsync();
         using var client = real.ClientFor(auth.AccessToken);
 
