@@ -1,5 +1,5 @@
 # Imagem de produção da API (usada pelo Render). Build em duas etapas.
-FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:11.0 AS build
 # O BuildKit preenche com a arquitetura da imagem (amd64 no Render); o padrão cobre o build sem BuildKit.
 ARG TARGETARCH=amd64
 WORKDIR /src
