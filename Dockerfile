@@ -13,7 +13,7 @@ RUN dotnet restore src/RonatIa.Games.Api/RonatIa.Games.Api.csproj -a $TARGETARCH
 RUN dotnet publish src/RonatIa.Games.Api/RonatIa.Games.Api.csproj \
     -c Release -a $TARGETARCH --os linux --self-contained false -o /app --no-restore -p:UseAppHost=false
 
-FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:11.0 AS runtime
 WORKDIR /app
 COPY --from=build /app .
 
